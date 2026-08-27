@@ -13,10 +13,10 @@
         @else
           disabled
         @endif
-        class="mesa-btn py-2 px-1.5 rounded border text-white transition-all flex items-center justify-between
+        class="mesa-btn w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-md border text-white transition-all flex flex-col items-center justify-center leading-none gap-0.5
         {{ $disponible ? 'border-blue-500/50 bg-blue-950/30 hover:border-amber-400 cursor-pointer' : 'border-zinc-900 bg-black text-zinc-600 cursor-not-allowed opacity-80' }}">
     <span class="font-bold text-[10px]">{{ $codigo }}</span>
-    <span class="text-[8px] {{ $disponible ? 'text-amber-400' : 'text-zinc-600' }}">
+    <span class="text-[7px] {{ $disponible ? 'text-amber-400' : 'text-zinc-600' }}">
         {{ $disponible ? '$' . number_format($p, 0) : 'OCUPADA' }}
     </span>
 </button>

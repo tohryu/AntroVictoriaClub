@@ -101,10 +101,32 @@
 
                     <div>
                         <h2 class="text-lg font-bold text-amber-400 mb-3 pb-1 border-b border-gray-800 flex items-center gap-2">
-                            <span>Zona R - Mesas Redondas (R1 - R13)</span>
+                            <span>Mesas Redondas - Izquierda de la Pista (R1 - R6)</span>
                         </h2>
                         <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80 justify-items-center">
-                            @foreach(range(1, 13) as $i)
+                            @foreach(range(1, 6) as $i)
+                                @php
+                                    $codigo = 'R' . $i;
+                                    $mesa = $mesas->firstWhere('numero', $codigo);
+                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $id = $mesa ? $mesa->id : '';
+                                @endphp
+                                <button type="button"
+                                        onclick="seleccionarMesaParaEditar('{{ $id }}', '{{ $codigo }}', {{ $precio }})"
+                                        class="w-20 h-20 flex flex-col items-center justify-center border-2 border-amber-600/70 bg-amber-950/30 hover:bg-amber-900/50 hover:border-amber-400 rounded-full font-bold text-center transition shadow-md group focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+                                    <span class="block text-amber-200 group-hover:text-amber-300 text-sm">{{ $codigo }}</span>
+                                    <span id="precio-{{ $codigo }}" class="block text-[10px] text-amber-400/80 font-normal mt-1">${{ number_format($precio, 2) }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-400 mb-3 pb-1 border-b border-gray-800 flex items-center gap-2">
+                            <span>Mesas Redondas - Derecha de la Pista (R7 - R12)</span>
+                        </h2>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80 justify-items-center">
+                            @foreach(range(7, 12) as $i)
                                 @php
                                     $codigo = 'R' . $i;
                                     $mesa = $mesas->firstWhere('numero', $codigo);
@@ -123,10 +145,10 @@
 
                     <div>
                         <h2 class="text-lg font-bold text-blue-400 mb-3 pb-1 border-b border-gray-800 flex items-center gap-2">
-                            <span>Zona D (D1 - D2)</span>
+                            <span>Lado Derecho (D1, D2 y R13)</span>
                         </h2>
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">
-                            @foreach(['D1', 'D2'] as $codigo)
+                            @foreach(['D1', 'D2', 'R13'] as $codigo)
                                 @php
                                     $mesa = $mesas->firstWhere('numero', $codigo);
                                     $precio = $mesa ? $mesa->precio : 0.00;
