@@ -55,8 +55,8 @@ Route::prefix('admin/promociones')->name('admin.promociones.')->middleware(['aut
 
 Route::prefix('admin/mesas')->name('admin.mesas.')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/', [MesaAdminController::class, 'index'])->name('index');
-    Route::patch('/{id}/precio', [MesaAdminController::class, 'updatePrecio'])->name('update_precio');
     Route::patch('/cover/precio', [CoverAdminController::class, 'updatePrecio'])->name('cover.update_precio');
+    Route::patch('/{id}/precio', [MesaAdminController::class, 'updatePrecio'])->name('update_precio');
 });
 
 Route::prefix('admin/escaner')->name('admin.escaner.')->middleware(['auth', 'admin'])->group(function () {
