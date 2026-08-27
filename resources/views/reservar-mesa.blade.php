@@ -67,9 +67,16 @@
             ESCENARIO
           </div>
 
-          <div class="max-w-4xl mx-auto grid grid-cols-12 gap-3 items-stretch min-w-[700px]">
+          <div class="max-w-5xl mx-auto flex items-stretch justify-center gap-3 min-w-[850px]">
 
-            <div class="col-span-4 grid grid-cols-2 gap-3">
+            <!-- Mesas redondas BL1-BL6: lado izquierdo, junto a las mesas L -->
+            <div class="flex flex-col justify-center gap-2 flex-shrink-0">
+              @foreach(['BL1', 'BL2', 'BL3', 'BL4', 'BL5', 'BL6'] as $codigo)
+                @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Izquierda Ext', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+              @endforeach
+            </div>
+
+            <div class="flex-1 grid grid-cols-2 gap-3">
               <div class="flex flex-col justify-between gap-2">
                 <div class="flex flex-col gap-2">
                   @foreach(['L1', 'L2', 'L3'] as $codigo)
@@ -99,7 +106,7 @@
               </div>
             </div>
 
-            <div class="col-span-4 border border-amber-500/40 rounded-3xl p-4 flex flex-col justify-between items-center relative min-h-[400px]">
+            <div class="flex-1 border border-amber-500/40 rounded-3xl p-4 flex flex-col justify-between items-center relative min-h-[400px]">
               <div class="w-full flex-1 flex items-center justify-center gap-3 my-auto">
                 <!-- Mesas redondas: lado izquierdo de la pista -->
                 <div class="flex flex-col gap-2">
@@ -112,10 +119,16 @@
                   <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Pista</span>
                 </div>
 
-                <!-- Mesas redondas: lado derecho de la pista -->
+                <!-- Mesas redondas: lado derecho de la pista, y debajo D1, D2, R13 -->
                 <div class="flex flex-col gap-2">
                   @foreach(['R7', 'R8', 'R9', 'R10', 'R11', 'R12'] as $codigo)
                     @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @endforeach
+
+                  <div class="border-t border-amber-500/20 my-1"></div>
+
+                  @foreach(['D1', 'D2', 'R13'] as $codigo)
+                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
               </div>
@@ -125,20 +138,11 @@
               </div>
             </div>
 
-            <div class="col-span-4 grid grid-cols-2 gap-3">
-              <div class="flex flex-col justify-between py-2">
-                <div class="flex flex-col gap-2 -mt-4 transform -rotate-12">
-                  @foreach(['D1', 'D2'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Superior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-                  @endforeach
-                </div>
-              </div>
-
-              <div class="flex flex-col justify-center py-2">
-                @foreach(['R13'] as $codigo)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-                @endforeach
-              </div>
+            <!-- Mesas redondas BR1-BR6: lado derecho, junto a las mesas R -->
+            <div class="flex flex-col justify-center gap-2 flex-shrink-0">
+              @foreach(['BR1', 'BR2', 'BR3', 'BR4', 'BR5', 'BR6'] as $codigo)
+                @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Derecha Ext', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+              @endforeach
             </div>
 
           </div>
