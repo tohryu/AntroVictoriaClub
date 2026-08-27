@@ -100,10 +100,10 @@
                     </div>
 
                     <div>
-                        <h2 class="text-lg font-bold text-blue-400 mb-3 pb-1 border-b border-gray-800 flex items-center gap-2">
-                            <span>Zona R (R1 - R13)</span>
+                        <h2 class="text-lg font-bold text-amber-400 mb-3 pb-1 border-b border-gray-800 flex items-center gap-2">
+                            <span>Zona R - Mesas Redondas (R1 - R13)</span>
                         </h2>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80">
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 bg-gray-950/60 p-4 rounded-xl border border-gray-800/80 justify-items-center">
                             @foreach(range(1, 13) as $i)
                                 @php
                                     $codigo = 'R' . $i;
@@ -113,9 +113,9 @@
                                 @endphp
                                 <button type="button"
                                         onclick="seleccionarMesaParaEditar('{{ $id }}', '{{ $codigo }}', {{ $precio }})"
-                                        class="p-3 border border-gray-800 bg-gray-900/80 hover:bg-blue-950/50 hover:border-blue-500/80 rounded-xl font-bold text-center transition shadow-md group focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer">
-                                    <span class="block text-gray-200 group-hover:text-blue-400 text-base">{{ $codigo }}</span>
-                                    <span id="precio-{{ $codigo }}" class="block text-xs text-gray-400 font-normal mt-1">${{ number_format($precio, 2) }}</span>
+                                        class="w-20 h-20 flex flex-col items-center justify-center border-2 border-amber-600/70 bg-amber-950/30 hover:bg-amber-900/50 hover:border-amber-400 rounded-full font-bold text-center transition shadow-md group focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer">
+                                    <span class="block text-amber-200 group-hover:text-amber-300 text-sm">{{ $codigo }}</span>
+                                    <span id="precio-{{ $codigo }}" class="block text-[10px] text-amber-400/80 font-normal mt-1">${{ number_format($precio, 2) }}</span>
                                 </button>
                             @endforeach
                         </div>

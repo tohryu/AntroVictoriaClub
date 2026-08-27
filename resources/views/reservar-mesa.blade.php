@@ -114,7 +114,7 @@
 
                 <!-- Mesas redondas: lado derecho de la pista -->
                 <div class="flex flex-col gap-2">
-                  @foreach(['R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13'] as $codigo)
+                  @foreach(['R7', 'R8', 'R9', 'R10', 'R11', 'R12'] as $codigo)
                     @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
@@ -132,6 +132,12 @@
                     @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Superior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
+              </div>
+
+              <div class="flex flex-col justify-center py-2">
+                @foreach(['R13'] as $codigo)
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                @endforeach
               </div>
             </div>
 
