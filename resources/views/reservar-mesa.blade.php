@@ -100,8 +100,24 @@
             </div>
 
             <div class="col-span-4 border border-amber-500/40 rounded-3xl p-4 flex flex-col justify-between items-center relative min-h-[400px]">
-              <div class="w-full flex-1 flex items-center justify-center my-auto">
-                <div class="w-28 h-40 border border-amber-500/60 bg-amber-950/20 rounded-lg"></div>
+              <div class="w-full flex-1 flex items-center justify-center gap-3 my-auto">
+                <!-- Mesas redondas: lado izquierdo de la pista -->
+                <div class="flex flex-col gap-2">
+                  @foreach(['R1', 'R2', 'R3', 'R4', 'R5', 'R6'] as $codigo)
+                    @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @endforeach
+                </div>
+
+                <div class="w-28 h-40 border border-amber-500/60 bg-amber-950/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Pista</span>
+                </div>
+
+                <!-- Mesas redondas: lado derecho de la pista -->
+                <div class="flex flex-col gap-2">
+                  @foreach(['R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13'] as $codigo)
+                    @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @endforeach
+                </div>
               </div>
               <div class="w-full flex justify-between px-2">
                 <div class="w-8 h-6 border border-amber-500/50 rounded"></div>
@@ -116,32 +132,6 @@
                     @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Superior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
-
-                <div class="flex flex-col gap-2 mt-2">
-                  @foreach(['R1', 'R2', 'R3'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-                  @endforeach
-                </div>
-              </div>
-
-              <div class="flex flex-col justify-between py-2">
-                <div class="flex flex-col gap-2 mt-12">
-                  @foreach(['R8', 'R9'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-                  @endforeach
-                </div>
-
-                <div class="flex flex-col gap-2">
-                  @foreach(['R10', 'R11', 'R12', 'R13'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-                  @endforeach
-                </div>
-              </div>
-
-              <div class="col-span-2 flex flex-col gap-2">
-                @foreach(['R4', 'R5', 'R6', 'R7'] as $codigo)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-                @endforeach
               </div>
             </div>
 
@@ -285,13 +275,15 @@
         return;
       }
 
+      const baseClasses = (btn.dataset.baseClass || 'bg-blue-950/30').split(' ');
+
       if (mesasSeleccionadas.has(id)) {
         mesasSeleccionadas.delete(id);
         btn.classList.remove('bg-amber-500', 'text-black');
-        btn.classList.add('bg-blue-950/30');
+        btn.classList.add(...baseClasses);
       } else {
         mesasSeleccionadas.set(id, { nombre, precio, zona });
-        btn.classList.remove('bg-blue-950/30');
+        btn.classList.remove(...baseClasses);
         btn.classList.add('bg-amber-500', 'text-black');
       }
 

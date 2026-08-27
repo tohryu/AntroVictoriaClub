@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Victoria Luxury Club - Cartelera y Promociones</title>
+  <title>Victoria Luxury Club - Cartelera de Eventos</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
@@ -42,7 +42,6 @@
         </div>
 
         <div class="hidden md:flex items-center gap-8 font-medium text-sm text-zinc-400">
-          <a href="#promociones" class="hover:text-amber-400 transition-colors">Promociones</a>
           <a href="#eventos" class="hover:text-amber-400 transition-colors">Eventos</a>
           @auth
             <a href="{{ route('reserva.mapa') }}" class="hover:text-amber-400 transition-colors">Mesas</a>
@@ -104,10 +103,6 @@
           📍 Boulevard Europa #12, Puebla, Mexico, 72160
         </p>
         <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          <a href="#promociones" class="w-full sm:w-auto bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-500 text-black font-extrabold text-sm px-6 py-3 rounded-xl shadow-xl shadow-amber-500/20 transition-all transform hover:-translate-y-0.5">
-            Ver Promociones
-          </a>
-
           @auth
             <a href="{{ route('reserva.mapa') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
               Reservar Mesa
@@ -123,42 +118,6 @@
         </div>
       </div>
     </header>
-
-    <section id="promociones" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-b border-zinc-800/60">
-      <div class="mb-12">
-        <span class="bg-amber-950/60 text-amber-300 border border-amber-500/40 text-xs uppercase font-bold tracking-widest px-3 py-1 rounded-full mb-3 inline-block">
-          Imperdibles
-        </span>
-        <h2 class="text-3xl font-extrabold tracking-tight text-white uppercase">Promociones y Combos</h2>
-        <p class="text-zinc-400 text-sm mt-1">Aprovecha nuestras ofertas exclusivas en botellas y paquetes por reserva anticipada.</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-        @forelse($promociones as $promo)
-          <div class="bg-zinc-900/60 border border-zinc-800 rounded-2xl p-6 flex flex-col justify-between shadow-lg backdrop-blur-sm hover:border-amber-500/40 transition-all">
-            <div>
-              @if($promo->badge)
-                <span class="bg-amber-500 text-black text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3">
-                  {{ $promo->badge }}
-                </span>
-              @endif
-              <h3 class="text-xl font-bold text-white mb-2">{{ $promo->titulo }}</h3>
-              @if($promo->descripcion)
-                <p class="text-zinc-400 text-sm leading-relaxed mb-4">{{ $promo->descripcion }}</p>
-              @endif
-            </div>
-
-            <div class="border-t border-zinc-800/80 pt-4 mt-auto">
-              <span class="text-amber-500 font-extrabold text-lg uppercase tracking-wide">
-                {{ $promo->precio_etiqueta }}
-              </span>
-            </div>
-          </div>
-        @empty
-          <p class="text-zinc-500 col-span-4 text-center py-4">No hay promociones activas por el momento.</p>
-        @endforelse
-      </div>
-    </section>
 
     <main id="eventos" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
