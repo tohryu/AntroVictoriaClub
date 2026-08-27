@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
@@ -34,8 +35,15 @@ class GoogleController extends Controller
 
             return redirect()->route('home');
         } catch (\Exception $e) {
+            Log::error('Error en login con Google: '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
 
-            return redirect()->route('home')->with('error', 'Ocurrió un error al iniciar sesión con Google.');
+            $mensaje = config('app.debug')
+                ? 'Error de Google: '.$e->getMessage()
+                : 'Ocurrió un error al iniciar sesión con Google. Intenta de nuevo.';
+
+            return redirect()->route('home')->with('error', $mensaje);
         }
     }
 }

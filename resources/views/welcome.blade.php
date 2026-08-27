@@ -11,6 +11,22 @@
 
   <canvas id="fluidCanvas" class="fixed inset-0 pointer-events-none z-0"></canvas>
 
+  @if (session('error'))
+    <div class="relative z-50 max-w-2xl mx-auto mt-4 px-4">
+      <div class="bg-red-950/80 border border-red-500/50 text-red-300 text-sm rounded-xl p-4 text-center">
+        {{ session('error') }}
+      </div>
+    </div>
+  @endif
+
+  @if (session('success'))
+    <div class="relative z-50 max-w-2xl mx-auto mt-4 px-4">
+      <div class="bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 text-sm rounded-xl p-4 text-center">
+        {{ session('success') }}
+      </div>
+    </div>
+  @endif
+
   <div class="relative z-10">
 
     <nav class="sticky top-0 z-50 backdrop-blur-md bg-black/80 border-b border-zinc-800">
