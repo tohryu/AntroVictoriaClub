@@ -60,19 +60,19 @@
 
         <div id="vista-piso1" class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-4 sm:p-8 overflow-x-auto">
 
-          <div class="flex items-start justify-between mb-6 px-2">
-            <div class="w-32 h-10 bg-zinc-800 border border-blue-500/50 rounded flex items-center justify-center text-xs font-bold text-blue-400">
-              BARRA
+          <div class="w-32 h-10 mx-auto bg-zinc-800 border border-blue-500/50 rounded flex items-center justify-center text-xs font-bold text-blue-400 mb-3">
+            BARRA
+          </div>
+
+          <div class="flex items-start justify-center gap-3 mb-8">
+            <div class="w-full max-w-md h-12 bg-amber-950/40 border border-amber-500/50 rounded-lg flex items-center justify-center text-sm font-black text-amber-300">
+              ESCENARIO
             </div>
-            <div class="flex gap-2 transform -rotate-12">
+            <div class="flex gap-2 transform -rotate-12 mt-4">
               @foreach(['D1', 'D2'] as $codigo)
                 @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Barra', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
               @endforeach
             </div>
-          </div>
-
-          <div class="w-full max-w-md mx-auto h-12 bg-amber-950/40 border border-amber-500/50 rounded-lg flex items-center justify-center text-sm font-black text-amber-300 mb-8">
-            ESCENARIO
           </div>
 
           <div class="max-w-5xl mx-auto flex items-stretch justify-center gap-3 min-w-[850px]">
@@ -137,8 +137,8 @@
               </div>
             </div>
 
-            <!-- Mesas cuadradas R1-R13: dos columnas, como el lado izquierdo -->
-            <div class="flex-1 grid grid-cols-2 gap-3 content-start">
+            <!-- Mesas cuadradas R1-R13: dos columnas, como el lado izquierdo (un poco mas abajo) -->
+            <div class="flex-1 grid grid-cols-2 gap-3 content-start mt-8">
               <div class="flex flex-col gap-2">
                 @foreach(['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'] as $codigo)
                   @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
