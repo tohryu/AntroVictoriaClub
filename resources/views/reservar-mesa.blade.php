@@ -60,22 +60,24 @@
 
         <div id="vista-piso1" class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-4 sm:p-8 overflow-x-auto">
 
-          <div class="w-32 h-10 mx-auto bg-zinc-800 border border-blue-500/50 rounded flex items-center justify-center text-xs font-bold text-blue-400 mb-6">
-            BARRA
+          <div class="flex items-start justify-center gap-6 mb-6">
+            <div class="w-32 h-10 bg-zinc-800 border border-blue-500/50 rounded flex items-center justify-center text-xs font-bold text-blue-400">
+              BARRA
+            </div>
+            <div class="flex gap-2 transform -rotate-12">
+              @foreach(['D1', 'D2'] as $codigo)
+                @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Barra', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+              @endforeach
+            </div>
           </div>
+
           <div class="w-full max-w-md mx-auto h-12 bg-amber-950/40 border border-amber-500/50 rounded-lg flex items-center justify-center text-sm font-black text-amber-300 mb-8">
             ESCENARIO
           </div>
 
           <div class="max-w-5xl mx-auto flex items-stretch justify-center gap-3 min-w-[850px]">
 
-            <!-- Mesas redondas BL1-BL6: lado izquierdo, junto a las mesas L -->
-            <div class="flex flex-col justify-center gap-2 flex-shrink-0">
-              @foreach(['BL1', 'BL2', 'BL3', 'BL4', 'BL5', 'BL6'] as $codigo)
-                @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Izquierda Ext', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-              @endforeach
-            </div>
-
+            <!-- Mesas cuadradas L1-L16: columna exterior izquierda -->
             <div class="flex-1 grid grid-cols-2 gap-3">
               <div class="flex flex-col justify-between gap-2">
                 <div class="flex flex-col gap-2">
@@ -106,45 +108,46 @@
               </div>
             </div>
 
-            <div class="flex-1 border border-amber-500/40 rounded-3xl p-4 flex flex-col justify-between items-center relative min-h-[400px]">
+            <div class="border border-amber-500/40 rounded-3xl p-4 flex flex-col justify-between items-center relative min-h-[400px] flex-shrink-0">
               <div class="w-full flex-1 flex items-center justify-center gap-3 my-auto">
-                <!-- Mesas redondas: lado izquierdo de la pista -->
+                <!-- Mesas redondas BL1-BL6: lado izquierdo de la pista -->
                 <div class="flex flex-col gap-2">
-                  @foreach(['R1', 'R2', 'R3', 'R4', 'R5', 'R6'] as $codigo)
+                  @foreach(['BL1', 'BL2', 'BL3', 'BL4', 'BL5', 'BL6'] as $codigo)
                     @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
 
-                <div class="w-28 h-40 border border-amber-500/60 bg-amber-950/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div class="w-28 h-64 border border-amber-500/60 bg-amber-950/20 rounded-lg flex items-center justify-center flex-shrink-0">
                   <span class="text-xs font-bold text-amber-400 tracking-wider uppercase">Pista</span>
                 </div>
 
-                <!-- Mesas redondas: lado derecho de la pista, y debajo D1, D2, R13 -->
+                <!-- Mesas redondas BR1-BR6: lado derecho de la pista -->
                 <div class="flex flex-col gap-2">
-                  @foreach(['R7', 'R8', 'R9', 'R10', 'R11', 'R12'] as $codigo)
+                  @foreach(['BR1', 'BR2', 'BR3', 'BR4', 'BR5', 'BR6'] as $codigo)
                     @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-                  @endforeach
-
-                  <div class="border-t border-amber-500/20 my-1"></div>
-
-                  @foreach(['D1', 'D2', 'R13'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
               </div>
-              <div class="w-full flex justify-between px-2">
-                <div class="w-8 h-6 border border-amber-500/50 rounded"></div>
-                <div class="w-8 h-6 border border-amber-500/50 rounded"></div>
+
+              <!-- Mesas E1, E2: junto a la entrada -->
+              <div class="w-full flex justify-between px-2 gap-3">
+                @foreach(['E1', 'E2'] as $codigo)
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Entrada', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                @endforeach
               </div>
             </div>
 
-            <!-- Mesas redondas BR1-BR6: lado derecho, junto a las mesas R -->
-            <div class="flex flex-col justify-center gap-2 flex-shrink-0">
-              @foreach(['BR1', 'BR2', 'BR3', 'BR4', 'BR5', 'BR6'] as $codigo)
-                @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Derecha Ext', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+            <!-- Mesas cuadradas R1-R13: columna exterior derecha -->
+            <div class="flex-1 flex flex-col gap-2 justify-center">
+              @foreach(['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13'] as $codigo)
+                @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
               @endforeach
             </div>
 
+          </div>
+
+          <div class="text-center mt-6">
+            <span class="inline-block bg-zinc-900 border border-zinc-700 rounded-full px-6 py-2 text-xs font-black tracking-widest text-zinc-300 uppercase">Entrada</span>
           </div>
         </div>
 
