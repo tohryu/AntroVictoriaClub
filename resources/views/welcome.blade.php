@@ -175,15 +175,21 @@
                     {{ $evento->precio_etiqueta }}
                   </span>
                 </div>
-                @auth
-                  <a href="{{ route('reserva.mapa') }}" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
-                    Reservar Mesa
-                  </a>
+                @if($loop->first)
+                  @auth
+                    <a href="{{ route('reserva.mapa') }}" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                      Reservar Mesa
+                    </a>
+                  @else
+                    <a href="{{ route('login.google') }}" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                      Reservar Mesa
+                    </a>
+                  @endauth
                 @else
-                  <a href="{{ route('login.google') }}" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
-                    Reservar Mesa
-                  </a>
-                @endauth
+                  <span class="bg-zinc-900 text-zinc-500 text-sm font-bold px-4 py-2 rounded-lg border border-zinc-800 cursor-not-allowed select-none">
+                    Próximamente
+                  </span>
+                @endif
               </div>
             </div>
           </article>
@@ -199,7 +205,7 @@
         @php
           $instagramUrl = $instagramUrl ?? 'https://www.instagram.com/victoria_luxurygroup?igsi=ZDNlZDc0MzIxNw==';
           $tiktokUrl    = $tiktokUrl ?? 'https://www.tiktok.com/@luxuri564?is_from_webapp=1&sender_device=pc';
-          $facebookUrl  = $facebookUrl ?? 'https://www.facebook.com/share/r/19EP6gkCdA/';
+          $facebookUrl  = $facebookUrl ?? 'https://www.facebook.com/share/184yeRxTyd/';
         @endphp
 
         <div class="flex items-center gap-6">

@@ -66,6 +66,10 @@
 
             <div class="pt-2 space-y-3">
                 <h2 class="text-xs uppercase tracking-widest font-bold text-zinc-400 mb-3">Eventos Programados</h2>
+                <p class="text-[11px] text-zinc-500 -mt-2 mb-1">El evento activo con la fecha más próxima es el único que muestra el botón "Reservar Mesa" en la página principal; los demás muestran "Próximamente".</p>
+                @php
+                    $idPrimerEventoActivo = $eventos->where('activo', true)->sortBy('fecha')->first()->id ?? null;
+                @endphp
                 <div class="space-y-2.5">
                     @forelse($eventos as $evento)
                         <div class="bg-zinc-900/70 hover:bg-zinc-900 p-3.5 sm:p-4 rounded-xl flex items-center justify-between border border-zinc-800/80 transition-all shadow-sm gap-4">
@@ -75,6 +79,9 @@
                                 @endif
                                 <div class="min-w-0 space-y-0.5">
                                     <span class="inline-block text-[10px] uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">{{ $evento->fecha }}</span>
+                                    @if($evento->id === $idPrimerEventoActivo)
+                                        <span class="inline-block text-[10px] uppercase tracking-wider bg-green-500/15 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-bold">Reservar Mesa activo</span>
+                                    @endif
                                     <h3 class="text-base font-bold text-white leading-tight truncate">
                                         {{ $evento->titulo }}
                                         @if($evento->subtitulo)
