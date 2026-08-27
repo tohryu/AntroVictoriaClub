@@ -32,9 +32,13 @@ class MesaAdminController extends Controller
                 return $mesa->fresh();
             });
         } catch (\Throwable $e) {
-            Log::error('Error actualizando precio de mesa '.$id.': '.$e->getMessage());
+            Log::error('Error actualizando precio de mesa '.$id.': '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
 
-            $mensajeError = 'No se pudo guardar el precio en la base de datos. Intenta de nuevo.';
+            $mensajeError = config('app.debug')
+                ? 'Error de base de datos: '.$e->getMessage()
+                : 'No se pudo guardar el precio en la base de datos. Intenta de nuevo.';
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $mensajeError], 500);

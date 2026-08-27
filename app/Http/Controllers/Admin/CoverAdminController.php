@@ -19,9 +19,13 @@ class CoverAdminController extends Controller
         try {
             $config = DB::transaction(fn () => CoverConfiguracion::actualizarPrecio($validado['precio']));
         } catch (\Throwable $e) {
-            Log::error('Error actualizando precio de cover: '.$e->getMessage());
+            Log::error('Error actualizando precio de cover: '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
 
-            $mensajeError = 'No se pudo guardar el precio del cover. Intenta de nuevo.';
+            $mensajeError = config('app.debug')
+                ? 'Error de base de datos: '.$e->getMessage()
+                : 'No se pudo guardar el precio del cover. Intenta de nuevo.';
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => false, 'message' => $mensajeError], 500);

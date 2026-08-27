@@ -44,7 +44,7 @@
       @csrf
 
       <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center font-semibold">
-        El precio de cada mesa es solo de consumo — no incluye el cover ni el acceso al club.
+        El precio es solo de consumo.
       </div>
 
       <div class="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6 shadow-2xl">
