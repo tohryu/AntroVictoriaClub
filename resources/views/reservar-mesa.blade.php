@@ -60,7 +60,7 @@
 
         <div id="vista-piso1" class="bg-zinc-950/90 border border-zinc-800 rounded-xl p-4 sm:p-8 overflow-x-auto">
 
-          <div class="flex items-start justify-center gap-6 mb-6">
+          <div class="flex items-start justify-between mb-6 px-2">
             <div class="w-32 h-10 bg-zinc-800 border border-blue-500/50 rounded flex items-center justify-center text-xs font-bold text-blue-400">
               BARRA
             </div>
@@ -78,22 +78,22 @@
           <div class="max-w-5xl mx-auto flex items-stretch justify-center gap-3 min-w-[850px]">
 
             <!-- Mesas cuadradas L1-L16: columna exterior izquierda -->
-            <div class="flex-1 grid grid-cols-2 gap-3">
-              <div class="flex flex-col justify-between gap-2">
+            <div class="flex-1 grid grid-cols-2 gap-3 content-start">
+              <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
                   @foreach(['L1', 'L2', 'L3'] as $codigo)
                     @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
 
-                <div class="mt-4 flex flex-col gap-2">
+                <div class="flex flex-col gap-2">
                   @foreach(['L4', 'L5', 'L6', 'L7', 'L8'] as $codigo)
                     @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                   @endforeach
                 </div>
               </div>
 
-              <div class="flex flex-col justify-between py-2">
+              <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
                   @foreach(['L9', 'L10', 'L11', 'L12'] as $codigo)
                     @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
@@ -137,11 +137,18 @@
               </div>
             </div>
 
-            <!-- Mesas cuadradas R1-R13: columna exterior derecha -->
-            <div class="flex-1 flex flex-col gap-2 justify-center">
-              @foreach(['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7', 'R8', 'R9', 'R10', 'R11', 'R12', 'R13'] as $codigo)
-                @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-              @endforeach
+            <!-- Mesas cuadradas R1-R13: dos columnas, como el lado izquierdo -->
+            <div class="flex-1 grid grid-cols-2 gap-3 content-start">
+              <div class="flex flex-col gap-2">
+                @foreach(['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'] as $codigo)
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                @endforeach
+              </div>
+              <div class="flex flex-col gap-2">
+                @foreach(['R8', 'R9', 'R10', 'R11', 'R12', 'R13'] as $codigo)
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                @endforeach
+              </div>
             </div>
 
           </div>
