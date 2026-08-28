@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Mesa;
 use App\Models\Promocion;
 use App\Models\Reserva;
+use App\Services\Payments\ConektaPaymentService;
 use App\Services\Payments\PaymentException;
 use App\Services\Payments\PaypalPaymentService;
-use App\Services\Payments\StripePaymentService;
 use App\Services\QrCodeService;
 use App\Services\TicketPdfService;
 use Illuminate\Http\RedirectResponse;
@@ -69,7 +69,7 @@ class ReservaController extends Controller
                 $total = (float) $mesas->sum('precio');
 
                 if ($validated['metodo_pago'] === 'tarjeta') {
-                    (new StripePaymentService())->verificarPagado($validated['referencia_pago'], $total, 'mxn');
+                    (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
                 } else {
                     (new PaypalPaymentService())->capturarOrden($validated['referencia_pago'], $total, 'MXN');
                 }

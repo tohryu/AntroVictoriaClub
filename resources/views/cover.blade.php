@@ -7,7 +7,7 @@
   <title>Boleto de Cover - Victoria Luxury Club</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://pay.conekta.com/v1.0/js/conekta-checkout.min.js"></script>
   <script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.mode') === 'live' ? config('services.paypal.live.client_id') : config('services.paypal.sandbox.client_id') }}&currency=MXN"></script>
 </head>
 <body class="bg-black text-white min-h-screen p-4 sm:p-8 relative overflow-x-hidden">
@@ -77,11 +77,9 @@
         </div>
 
         <div id="panel-tarjeta-cover" class="space-y-3">
-          <div id="stripe-elemento-cover" class="bg-zinc-950 border border-zinc-800 rounded-xl p-4"></div>
-          <div id="stripe-error-cover" class="text-xs text-red-400"></div>
-          <button type="button" id="btn-pagar-tarjeta-cover" onclick="pagarConTarjetaCover()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-amber-500/10">
-            Pagar y Obtener Boleto
-          </button>
+          <div id="conekta-error-cover" class="text-xs text-red-400"></div>
+          <div id="conekta-checkout-target-cover" class="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden"></div>
+          <p id="conekta-cargando-cover" class="text-xs text-zinc-500 text-center hidden">Cargando pago con tarjeta...</p>
         </div>
 
         <div id="panel-paypal-cover" class="space-y-3 hidden">
@@ -98,9 +96,7 @@
   <script>
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const PRECIO_COVER = {{ (float) $precioCover }};
-    const STRIPE_PUBLIC_KEY = "{{ config('services.stripe.key') }}";
-    const stripe = STRIPE_PUBLIC_KEY ? Stripe(STRIPE_PUBLIC_KEY) : null;
-    let stripeElementsCover = null;
+    const CONEKTA_PUBLIC_KEY = "{{ config('services.conekta.public_key') }}";
     let paypalRenderedCover = false;
 
     function obtenerCantidad() {
@@ -131,13 +127,27 @@
       }
     }
 
-    async function prepararPagoCoverSegunMetodo() {
-      if (!stripe || document.getElementById('input_metodo_pago_cover').value !== 'tarjeta') {
+    function prepararPagoCoverSegunMetodo() {
+      if (document.getElementById('input_metodo_pago_cover').value !== 'tarjeta') {
+        return;
+      }
+      cargarCheckoutConektaCover();
+    }
+
+    async function cargarCheckoutConektaCover() {
+      const errorEl = document.getElementById('conekta-error-cover');
+      const cargandoEl = document.getElementById('conekta-cargando-cover');
+      errorEl.textContent = '';
+
+      if (!CONEKTA_PUBLIC_KEY) {
+        errorEl.textContent = 'El pago con tarjeta no está disponible en este momento.';
         return;
       }
 
+      cargandoEl.classList.remove('hidden');
+
       try {
-        const respuesta = await fetch('{{ route('pago.cover.stripe.intento') }}', {
+        const respuesta = await fetch('{{ route('pago.cover.conekta.orden') }}', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -149,44 +159,39 @@
 
         const datos = await respuesta.json();
 
-        if (!datos.success) {
-          document.getElementById('stripe-error-cover').textContent = datos.message || 'No se pudo iniciar el pago.';
+        if (!datos.success || !datos.checkout_id) {
+          errorEl.textContent = datos.message || 'No se pudo iniciar el pago.';
+          cargandoEl.classList.add('hidden');
           return;
         }
 
-        stripeElementsCover = stripe.elements({ clientSecret: datos.client_secret });
-        const paymentElement = stripeElementsCover.create('payment');
-        document.getElementById('stripe-elemento-cover').innerHTML = '';
-        paymentElement.mount('#stripe-elemento-cover');
+        cargandoEl.classList.add('hidden');
+        document.getElementById('conekta-checkout-target-cover').innerHTML = '';
+
+        window.ConektaCheckoutComponents.Integration({
+          config: {
+            locale: 'es',
+            publicKey: CONEKTA_PUBLIC_KEY,
+            targetIFrame: '#conekta-checkout-target-cover',
+            checkoutRequestId: datos.checkout_id,
+          },
+          callbacks: {
+            onFinalizePayment: function (orden) {
+              document.getElementById('input_referencia_pago_cover').value = orden.id;
+              document.getElementById('form-cover').submit();
+            },
+            onErrorPayment: function (error) {
+              errorEl.textContent = typeof error === 'string' ? error : 'No se pudo procesar el pago.';
+            },
+          },
+          options: {
+            autoResize: true,
+          },
+        });
       } catch (error) {
-        document.getElementById('stripe-error-cover').textContent = 'No se pudo conectar con el procesador de pagos.';
+        errorEl.textContent = 'No se pudo conectar con el procesador de pagos.';
+        cargandoEl.classList.add('hidden');
       }
-    }
-
-    async function pagarConTarjetaCover() {
-      if (!stripe || !stripeElementsCover) {
-        document.getElementById('stripe-error-cover').textContent = 'El pago con tarjeta no está disponible en este momento.';
-        return;
-      }
-
-      const boton = document.getElementById('btn-pagar-tarjeta-cover');
-      boton.disabled = true;
-      boton.textContent = 'Procesando...';
-
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements: stripeElementsCover,
-        redirect: 'if_required',
-      });
-
-      if (error) {
-        document.getElementById('stripe-error-cover').textContent = error.message || 'No se pudo procesar el pago.';
-        boton.disabled = false;
-        boton.textContent = 'Pagar y Obtener Boleto';
-        return;
-      }
-
-      document.getElementById('input_referencia_pago_cover').value = paymentIntent.id;
-      document.getElementById('form-cover').submit();
     }
 
     function renderizarBotonPaypalCover() {

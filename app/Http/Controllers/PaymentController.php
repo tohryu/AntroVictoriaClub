@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\CoverConfiguracion;
 use App\Models\Mesa;
+use App\Services\Payments\ConektaPaymentService;
 use App\Services\Payments\PaymentException;
 use App\Services\Payments\PaypalPaymentService;
-use App\Services\Payments\StripePaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -44,35 +44,39 @@ class PaymentController extends Controller
         return round($precio * $validado['cantidad'], 2);
     }
 
-    public function crearIntentoStripe(Request $request): JsonResponse
+    public function crearOrdenConektaMesas(Request $request): JsonResponse
     {
-        return $this->manejarCreacionStripe($request, fn () => $this->calcularTotalMesas($request));
+        return $this->manejarCreacionConekta($request, fn () => $this->calcularTotalMesas($request));
     }
 
-    public function crearIntentoStripeCover(Request $request): JsonResponse
+    public function crearOrdenConektaCover(Request $request): JsonResponse
     {
-        return $this->manejarCreacionStripe($request, fn () => $this->calcularTotalCover($request));
+        return $this->manejarCreacionConekta($request, fn () => $this->calcularTotalCover($request));
     }
 
-    protected function manejarCreacionStripe(Request $request, callable $calcularTotal): JsonResponse
+    protected function manejarCreacionConekta(Request $request, callable $calcularTotal): JsonResponse
     {
         try {
             $total = $calcularTotal();
 
-            $servicio = new StripePaymentService();
-            $intento = $servicio->crearIntento($total, 'mxn', [
-                'user_id' => $request->user()->id,
-            ]);
+            $servicio = new ConektaPaymentService();
+            $orden = $servicio->crearOrdenCheckout(
+                $total,
+                (string) $request->user()->name,
+                (string) $request->user()->email,
+                'MXN'
+            );
 
             return response()->json([
                 'success' => true,
-                'client_secret' => $intento->client_secret,
+                'orden_id' => $orden['id'],
+                'checkout_id' => $orden['checkout']['id'] ?? null,
                 'total' => $total,
             ]);
         } catch (PaymentException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Throwable $e) {
-            Log::error('Error creando PaymentIntent de Stripe: '.$e->getMessage());
+            Log::error('Error creando orden de Conekta: '.$e->getMessage());
 
             return response()->json(['success' => false, 'message' => 'No se pudo iniciar el pago con tarjeta.'], 500);
         }
@@ -145,3 +149,4 @@ class PaymentController extends Controller
         }
     }
 }
+

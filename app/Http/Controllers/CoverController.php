@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\BoletoCover;
 use App\Models\CoverConfiguracion;
+use App\Services\Payments\ConektaPaymentService;
 use App\Services\Payments\PaymentException;
 use App\Services\Payments\PaypalPaymentService;
-use App\Services\Payments\StripePaymentService;
 use App\Services\QrCodeService;
 use App\Services\TicketPdfService;
 use Illuminate\Http\RedirectResponse;
@@ -49,7 +49,7 @@ class CoverController extends Controller
                 $total = round($precioUnitario * $validated['cantidad'], 2);
 
                 if ($validated['metodo_pago'] === 'tarjeta') {
-                    (new StripePaymentService())->verificarPagado($validated['referencia_pago'], $total, 'mxn');
+                    (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
                 } else {
                     (new PaypalPaymentService())->capturarOrden($validated['referencia_pago'], $total, 'MXN');
                 }

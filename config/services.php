@@ -29,10 +29,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI', 'http://127.0.0.1:8000/auth/google/callback'),
     ],
 
-    'stripe' => [
-        'key' => env('STRIPE_KEY'),
-        'secret' => env('STRIPE_SECRET'),
-        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    'conekta' => [
+        'public_key' => env('CONEKTA_PUBLIC_KEY'),
+        'private_key' => env('CONEKTA_PRIVATE_KEY'),
+        'api_version' => env('CONEKTA_API_VERSION', '2.3.0'),
     ],
 
     'paypal' => [

@@ -31,11 +31,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/mis-boletos/{codigo}/ticket', [CoverController::class, 'descargarTicket'])->name('cover.ticket');
 
     Route::prefix('pago')->name('pago.')->middleware('throttle:20,1')->group(function () {
-        Route::post('/stripe/intento', [PaymentController::class, 'crearIntentoStripe'])->name('stripe.intento');
+        Route::post('/conekta/orden', [PaymentController::class, 'crearOrdenConektaMesas'])->name('conekta.orden');
         Route::post('/paypal/orden', [PaymentController::class, 'crearOrdenPaypal'])->name('paypal.orden');
         Route::post('/paypal/orden/capturar', [PaymentController::class, 'capturarOrdenPaypal'])->name('paypal.capturar');
 
-        Route::post('/cover/stripe/intento', [PaymentController::class, 'crearIntentoStripeCover'])->name('cover.stripe.intento');
+        Route::post('/cover/conekta/orden', [PaymentController::class, 'crearOrdenConektaCover'])->name('cover.conekta.orden');
         Route::post('/cover/paypal/orden', [PaymentController::class, 'crearOrdenPaypalCover'])->name('cover.paypal.orden');
         Route::post('/cover/paypal/orden/capturar', [PaymentController::class, 'capturarOrdenPaypalCover'])->name('cover.paypal.capturar');
     });

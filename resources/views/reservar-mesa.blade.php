@@ -12,7 +12,7 @@
   <title>Selección de Mesa - Victoria Luxury Club</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://pay.conekta.com/v1.0/js/conekta-checkout.min.js"></script>
   <script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.mode') === 'live' ? config('services.paypal.live.client_id') : config('services.paypal.sandbox.client_id') }}&currency=MXN"></script>
 </head>
 <body class="bg-black text-white min-h-screen p-4 sm:p-8 relative overflow-x-hidden">
@@ -239,11 +239,9 @@
         </div>
 
         <div id="panel-tarjeta" class="space-y-3">
-          <div id="stripe-elemento" class="bg-zinc-950 border border-zinc-800 rounded-xl p-4"></div>
-          <div id="stripe-error" class="text-xs text-red-400"></div>
-          <button type="button" id="btn-pagar-tarjeta" onclick="pagarConTarjeta()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-amber-500/10">
-            Pagar y Finalizar Reserva
-          </button>
+          <div id="conekta-error" class="text-xs text-red-400"></div>
+          <div id="conekta-checkout-target" class="bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden"></div>
+          <p id="conekta-cargando" class="text-xs text-zinc-500 text-center">Selecciona al menos una mesa para cargar el pago con tarjeta.</p>
         </div>
 
         <div id="panel-paypal" class="space-y-3 hidden">
@@ -262,9 +260,7 @@
 
   <script>
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    const STRIPE_PUBLIC_KEY = "{{ config('services.stripe.key') }}";
-    const stripe = STRIPE_PUBLIC_KEY ? Stripe(STRIPE_PUBLIC_KEY) : null;
-    let stripeElements = null;
+    const CONEKTA_PUBLIC_KEY = "{{ config('services.conekta.public_key') }}";
     let paypalRendered = false;
 
     const mesasSeleccionadas = new Map();
@@ -362,19 +358,36 @@
       }
     }
 
-    async function prepararPagoSegunTotal(total) {
-      if (total <= 0 || !stripe) {
-        return;
-      }
-
+    function prepararPagoSegunTotal(total) {
       if (document.getElementById('input_metodo_pago').value !== 'tarjeta') {
         return;
       }
+      cargarCheckoutConekta();
+    }
+
+    async function cargarCheckoutConekta() {
+      const errorEl = document.getElementById('conekta-error');
+      const cargandoEl = document.getElementById('conekta-cargando');
+      errorEl.textContent = '';
+
+      if (mesasSeleccionadas.size === 0) {
+        document.getElementById('conekta-checkout-target').innerHTML = '';
+        cargandoEl.classList.remove('hidden');
+        return;
+      }
+
+      if (!CONEKTA_PUBLIC_KEY) {
+        errorEl.textContent = 'El pago con tarjeta no está disponible en este momento.';
+        return;
+      }
+
+      cargandoEl.textContent = 'Cargando pago con tarjeta...';
+      cargandoEl.classList.remove('hidden');
 
       try {
         const mesaIds = Array.from(mesasSeleccionadas.keys());
 
-        const respuesta = await fetch('{{ route('pago.stripe.intento') }}', {
+        const respuesta = await fetch('{{ route('pago.conekta.orden') }}', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -386,49 +399,39 @@
 
         const datos = await respuesta.json();
 
-        if (!datos.success) {
-          document.getElementById('stripe-error').textContent = datos.message || 'No se pudo iniciar el pago.';
+        if (!datos.success || !datos.checkout_id) {
+          errorEl.textContent = datos.message || 'No se pudo iniciar el pago.';
+          cargandoEl.classList.add('hidden');
           return;
         }
 
-        stripeElements = stripe.elements({ clientSecret: datos.client_secret });
-        const paymentElement = stripeElements.create('payment');
-        document.getElementById('stripe-elemento').innerHTML = '';
-        paymentElement.mount('#stripe-elemento');
+        cargandoEl.classList.add('hidden');
+        document.getElementById('conekta-checkout-target').innerHTML = '';
+
+        window.ConektaCheckoutComponents.Integration({
+          config: {
+            locale: 'es',
+            publicKey: CONEKTA_PUBLIC_KEY,
+            targetIFrame: '#conekta-checkout-target',
+            checkoutRequestId: datos.checkout_id,
+          },
+          callbacks: {
+            onFinalizePayment: function (orden) {
+              document.getElementById('input_referencia_pago').value = orden.id;
+              document.getElementById('form-reserva').submit();
+            },
+            onErrorPayment: function (error) {
+              errorEl.textContent = typeof error === 'string' ? error : 'No se pudo procesar el pago.';
+            },
+          },
+          options: {
+            autoResize: true,
+          },
+        });
       } catch (error) {
-        document.getElementById('stripe-error').textContent = 'No se pudo conectar con el procesador de pagos.';
+        errorEl.textContent = 'No se pudo conectar con el procesador de pagos.';
+        cargandoEl.classList.add('hidden');
       }
-    }
-
-    async function pagarConTarjeta() {
-      if (mesasSeleccionadas.size === 0) {
-        alert('Selecciona al menos una mesa antes de continuar.');
-        return;
-      }
-
-      if (!stripe || !stripeElements) {
-        document.getElementById('stripe-error').textContent = 'El pago con tarjeta no está disponible en este momento.';
-        return;
-      }
-
-      const boton = document.getElementById('btn-pagar-tarjeta');
-      boton.disabled = true;
-      boton.textContent = 'Procesando...';
-
-      const { error, paymentIntent } = await stripe.confirmPayment({
-        elements: stripeElements,
-        redirect: 'if_required',
-      });
-
-      if (error) {
-        document.getElementById('stripe-error').textContent = error.message || 'No se pudo procesar el pago.';
-        boton.disabled = false;
-        boton.textContent = 'Pagar y Finalizar Reserva';
-        return;
-      }
-
-      document.getElementById('input_referencia_pago').value = paymentIntent.id;
-      document.getElementById('form-reserva').submit();
     }
 
     function renderizarBotonPaypal() {
