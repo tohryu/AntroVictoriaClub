@@ -24,7 +24,7 @@
                             <th class="p-3">Fecha</th>
                             <th class="p-3">Mesa(s)</th>
                             <th class="p-3">Zona</th>
-                            <th class="p-3">Total</th>
+                            <th class="p-3">Total (MXN)</th>
                             <th class="p-3">Estado</th>
                             <th class="p-3">Ticket</th>
                         </tr>

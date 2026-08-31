@@ -48,11 +48,26 @@ class CoverController extends Controller
 
                 $total = round($precioUnitario * $validated['cantidad'], 2);
 
-                if ($validated['metodo_pago'] === 'tarjeta') {
-                    (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
-                } else {
-                    (new PaypalPaymentService())->capturarOrden($validated['referencia_pago'], $total, 'MXN');
+                // ===================================================================
+                // 🧪 MODO PRUEBA — verificación de pago DESACTIVADA TEMPORALMENTE
+                // ===================================================================
+                // Mismo bypass que en ReservaController. Antes de producción:
+                // 1) Borra o comenta el bloque "BYPASS TEMPORAL" de abajo.
+                // 2) Descomenta el bloque original que sí verifica el pago.
+                // -------------------------------------------------------------------
+                // if ($validated['metodo_pago'] === 'tarjeta') {
+                //     (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
+                // } else {
+                //     (new PaypalPaymentService())->capturarOrden($validated['referencia_pago'], $total, 'MXN');
+                // }
+
+                // --- BYPASS TEMPORAL: acepta cualquier referencia_pago sin cobrar ---
+                if (empty($validated['referencia_pago'])) {
+                    throw ValidationException::withMessages([
+                        'pago' => 'Falta la referencia de pago.',
+                    ]);
                 }
+                // ===================================================================
 
                 $codigoBoleto = $this->generarCodigoBoletoUnico();
 

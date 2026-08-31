@@ -6,6 +6,10 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/logs/*.log
+/storage/logs/browser.log
+/database/*.sqlite
+/database/*.sqlite-journal
 /vendor
 .env
 .env.backup

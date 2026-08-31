@@ -50,7 +50,7 @@
       </div>
       <div class="flex justify-between border-b border-zinc-800/80 pb-2">
         <span class="text-zinc-500">Total Pagado:</span>
-        <span class="font-semibold text-amber-400">${{ number_format((float) $boleto->precio_total, 2) }}</span>
+        <span class="font-semibold text-amber-400">${{ number_format((float) $boleto->precio_total, 2) }} MXN</span>
       </div>
       <div class="flex justify-between">
         <span class="text-zinc-500">Método de Pago:</span>

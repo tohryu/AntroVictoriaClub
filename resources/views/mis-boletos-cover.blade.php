@@ -22,7 +22,7 @@
                             <th class="p-3">Código</th>
                             <th class="p-3">Nombre</th>
                             <th class="p-3">Fecha</th>
-                            <th class="p-3">Total</th>
+                            <th class="p-3">Total (MXN)</th>
                             <th class="p-3">Estado</th>
                             <th class="p-3">Ticket</th>
                         </tr>

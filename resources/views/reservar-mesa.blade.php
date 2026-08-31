@@ -64,7 +64,8 @@
             BARRA
           </div>
 
-          <div class="flex items-start justify-center gap-3 mb-8">
+          <div class="grid grid-cols-[1fr_auto_1fr] items-start gap-3 mb-8">
+            <div></div>
             <div class="w-full max-w-md h-12 bg-amber-950/40 border border-amber-500/50 rounded-lg flex items-center justify-center text-sm font-black text-amber-300">
               ESCENARIO
             </div>
@@ -205,15 +206,19 @@
         </div>
       </div>
 
-      <div class="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6 space-y-6">
+      <div id="card-paso3" class="hidden bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6 space-y-6">
+        <div class="text-center -mt-1 mb-2">
+          <span class="text-xs font-semibold text-amber-400 uppercase tracking-widest">Paso 3</span>
+          <h2 class="text-lg font-black text-white">Tus datos</h2>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div class="sm:col-span-3">
             <label class="block text-xs font-bold text-zinc-400 mb-2">NOMBRE COMPLETO</label>
-            <input type="text" name="nombre" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500">
+            <input type="text" id="input_nombre" name="nombre" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500">
           </div>
           <div>
             <label class="block text-xs font-bold text-zinc-400 mb-2">FECHA</label>
-            <input type="date" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500">
+            <input type="date" id="input_fecha" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500">
           </div>
           <div class="sm:col-span-2">
             <label class="block text-xs font-bold text-zinc-400 mb-2">PERSONAS</label>
@@ -223,6 +228,25 @@
             </select>
           </div>
         </div>
+      </div>
+
+      <div id="card-paso4" class="hidden bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6 space-y-6">
+        <div class="text-center -mt-1 mb-2">
+          <span class="text-xs font-semibold text-amber-400 uppercase tracking-widest">Paso 4</span>
+          <h2 class="text-lg font-black text-white">Pago</h2>
+        </div>
+
+        {{--
+        ===================================================================
+        🧪 MODO PRUEBA — bloque de pago real DESACTIVADO (comentado)
+        ===================================================================
+        Todo este bloque (método de pago + Conekta + PayPal) está comentado
+        temporalmente para poder probar el flujo completo sin pagar.
+
+        PARA RESTAURARLO: descomenta este bloque completo (quita el {{-- de
+        arriba y el --}} de abajo) y borra el bloque "BYPASS TEMPORAL" que
+        está justo después de este comentario.
+        ===================================================================
 
         <div>
           <label class="block text-xs font-bold text-zinc-400 mb-2">MÉTODO DE PAGO</label>
@@ -247,6 +271,15 @@
         <div id="panel-paypal" class="space-y-3 hidden">
           <div id="paypal-boton"></div>
           <div id="paypal-error" class="text-xs text-red-400"></div>
+        </div>
+        --}}
+
+        {{-- --- BYPASS TEMPORAL: botón que salta el pago para pruebas --- --}}
+        <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 text-center">
+          <p class="text-amber-400 text-xs font-bold uppercase mb-3">🧪 Modo prueba: sin cobro real</p>
+          <button type="button" id="btn-confirmar-sin-pago" onclick="confirmarSinPago()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-amber-500/10">
+            Confirmar y Obtener QR
+          </button>
         </div>
 
         <input type="hidden" name="metodo_pago" id="input_metodo_pago" value="tarjeta">
@@ -331,16 +364,46 @@
 
       document.getElementById('input_zona').value = zona;
 
+      const card3 = document.getElementById('card-paso3');
+      const card4 = document.getElementById('card-paso4');
+
       if (mesasSeleccionadas.size > 0) {
         resumen.classList.remove('hidden');
         lista.textContent = nombres.join(', ');
-        total.textContent = '$' + suma.toFixed(2);
+        total.textContent = '$' + suma.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MXN';
+        card3.classList.remove('hidden');
       } else {
         resumen.classList.add('hidden');
+        card3.classList.add('hidden');
+        card4.classList.add('hidden');
       }
 
+      actualizarVisibilidadPaso4();
       prepararPagoSegunTotal(suma);
     }
+
+    function actualizarVisibilidadPaso4() {
+      const card4 = document.getElementById('card-paso4');
+      const nombreOk = document.getElementById('input_nombre').value.trim() !== '';
+      const fechaOk = document.getElementById('input_fecha').value !== '';
+
+      if (mesasSeleccionadas.size > 0 && nombreOk && fechaOk) {
+        card4.classList.remove('hidden');
+      } else {
+        card4.classList.add('hidden');
+      }
+    }
+
+    document.getElementById('input_nombre').addEventListener('input', actualizarVisibilidadPaso4);
+    document.getElementById('input_fecha').addEventListener('input', actualizarVisibilidadPaso4);
+
+    /*
+    ===================================================================
+    🧪 MODO PRUEBA — funciones de pago real COMENTADAS (JS)
+    ===================================================================
+    Para restaurar: descomenta este bloque completo (quita las marcas de
+    comentario de arriba y de abajo) y borra confirmarSinPago() y el
+    prepararPagoSegunTotal() del bypass que están más adelante.
 
     function cambiarMetodoPago(metodo) {
       document.getElementById('input_metodo_pago').value = metodo;
@@ -356,13 +419,6 @@
         panelPaypal.classList.remove('hidden');
         renderizarBotonPaypal();
       }
-    }
-
-    function prepararPagoSegunTotal(total) {
-      if (document.getElementById('input_metodo_pago').value !== 'tarjeta') {
-        return;
-      }
-      cargarCheckoutConekta();
     }
 
     async function cargarCheckoutConekta() {
@@ -491,6 +547,31 @@
           document.getElementById('paypal-error').textContent = 'Ocurrió un error con PayPal. Intenta de nuevo.';
         },
       }).render('#paypal-boton');
+    }
+    */
+
+    // --- BYPASS TEMPORAL: sin Conekta/PayPal, solo confirma y manda el formulario ---
+    function prepararPagoSegunTotal(total) {
+      // No hace nada en modo prueba: no se carga ningún checkout real.
+    }
+
+    function confirmarSinPago() {
+      if (mesasSeleccionadas.size === 0) {
+        alert('Selecciona al menos una mesa en el mapa.');
+        return;
+      }
+      if (!document.getElementById('input_nombre').value.trim() || !document.getElementById('input_fecha').value) {
+        alert('Completa tu nombre y fecha antes de continuar.');
+        return;
+      }
+
+      const boton = document.getElementById('btn-confirmar-sin-pago');
+      boton.disabled = true;
+      boton.textContent = 'Generando QR...';
+
+      document.getElementById('input_metodo_pago').value = 'tarjeta';
+      document.getElementById('input_referencia_pago').value = 'PRUEBA-' + Date.now();
+      document.getElementById('form-reserva').submit();
     }
 
     document.getElementById('form-reserva').addEventListener('submit', function (e) {

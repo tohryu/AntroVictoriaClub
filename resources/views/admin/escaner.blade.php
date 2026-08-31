@@ -81,6 +81,19 @@
             }, 5000);
         }
 
+        function formatearDetalle(detalle, tipo) {
+            if (!detalle) {
+                return '';
+            }
+
+            if (tipo === 'cover') {
+                return `Código: ${detalle.codigo} · ${detalle.nombre} · ${detalle.fecha}`;
+            }
+
+            const mesas = Array.isArray(detalle.mesas) ? detalle.mesas.join(', ') : '';
+            return `Código: ${detalle.codigo} · ${detalle.nombre} · Mesa(s): ${mesas} · ${detalle.fecha}`;
+        }
+
         async function alDetectarQr(contenidoDecodificado) {
             if (procesando) {
                 return;
@@ -109,7 +122,7 @@
                 if (datos.success) {
                     resultado.className = 'mt-6 p-4 rounded-xl border text-sm bg-emerald-950/60 border-emerald-500 text-emerald-300';
                     titulo.textContent = datos.message;
-                    detalle.textContent = datos.detalle ? JSON.stringify(datos.detalle) : '';
+                    detalle.textContent = formatearDetalle(datos.detalle, datos.tipo);
                     mostrarToast(datos.message, 'success');
                 } else {
                     resultado.className = 'mt-6 p-4 rounded-xl border text-sm bg-red-950/60 border-red-500 text-red-300';

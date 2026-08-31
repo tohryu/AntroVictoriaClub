@@ -264,6 +264,7 @@
                             <p class="text-xs text-gray-400 mb-4">Este es el precio por persona que se cobra al comprar un boleto digital de cover.</p>
                             <div class="text-center mb-4">
                                 <span class="text-4xl font-black text-amber-400">${{ number_format((float) \App\Models\CoverConfiguracion::precioActual(), 2) }}</span>
+                                <span class="text-sm font-bold text-amber-400/70 ml-1">MXN</span>
                                 <span id="precio-cover-actual" class="hidden">{{ (float) \App\Models\CoverConfiguracion::precioActual() }}</span>
                             </div>
                             <form id="form-modificar-precio-cover">
