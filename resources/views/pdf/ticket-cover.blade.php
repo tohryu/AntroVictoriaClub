@@ -57,10 +57,6 @@
 </head>
 <body>
     @php
-        $evento = \App\Models\Evento::where('fecha', $boleto->fecha)->where('activo', true)->first();
-        $tituloEvento = $evento->titulo ?? 'Victoria Luxury Club';
-        $subtituloEvento = $evento->subtitulo ?? null;
-
         $diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
         $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
         $fechaObj = $boleto->fecha;
@@ -74,15 +70,12 @@
                 <div class="barra-top"></div>
 
                 <div class="marca-wrap">
-                    <div class="marca">Victoria Luxury Club</div>
+                    <div class="marca">Victoria</div>
                     <div class="marca-sub">Ticket Electrónico</div>
                 </div>
 
                 <div class="evento-wrap">
-                    <div class="evento-titulo">{{ $tituloEvento }}</div>
-                    @if($subtituloEvento)
-                        <div class="evento-subtitulo">{{ $subtituloEvento }}</div>
-                    @endif
+                    <div class="evento-titulo">Cover</div>
                 </div>
 
                 <div class="fecha-wrap">

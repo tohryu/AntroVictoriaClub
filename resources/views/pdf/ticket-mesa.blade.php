@@ -58,7 +58,7 @@
 <body>
     @php
         $evento = \App\Models\Evento::where('fecha', $reserva->fecha)->where('activo', true)->first();
-        $tituloEvento = $evento->titulo ?? 'Victoria Luxury Club';
+        $tituloEvento = $evento->titulo ?? 'Reservación de Mesa';
         $subtituloEvento = $evento->subtitulo ?? null;
 
         $diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
@@ -75,7 +75,7 @@
                 <div class="barra-top"></div>
 
                 <div class="marca-wrap">
-                    <div class="marca">Victoria Luxury Club</div>
+                    <div class="marca">Victoria</div>
                     <div class="marca-sub">Ticket Electrónico</div>
                 </div>
 
