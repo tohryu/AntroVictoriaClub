@@ -21,6 +21,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reserva-exitosa/{codigo}', [ReservaController::class, 'exitosa'])->name('reserva.exitosa');
     Route::get('/mis-reservas', [ReservaController::class, 'misReservas'])->name('reservas.mis_reservas');
     Route::get('/mis-reservas/{codigo}/ticket', [ReservaController::class, 'descargarTicket'])->name('reservas.ticket');
+    Route::get('/mis-reservas/{codigo}/qr', [ReservaController::class, 'verQr'])->name('reservas.qr');
 
     Route::get('/cover', [CoverController::class, 'formulario'])->name('cover.formulario');
     Route::post('/cover/procesar', [CoverController::class, 'procesar'])
@@ -29,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cover-exitoso/{codigo}', [CoverController::class, 'exitoso'])->name('cover.exitoso');
     Route::get('/mis-boletos', [CoverController::class, 'misBoletos'])->name('cover.mis_boletos');
     Route::get('/mis-boletos/{codigo}/ticket', [CoverController::class, 'descargarTicket'])->name('cover.ticket');
+    Route::get('/mis-boletos/{codigo}/qr', [CoverController::class, 'verQr'])->name('cover.qr');
 
     Route::prefix('pago')->name('pago.')->middleware('throttle:20,1')->group(function () {
         Route::post('/conekta/orden', [PaymentController::class, 'crearOrdenConektaMesas'])->name('conekta.orden');

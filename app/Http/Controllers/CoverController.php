@@ -150,4 +150,19 @@ class CoverController extends Controller
 
         return Storage::disk('public')->download($boleto->pdf_path, $boleto->codigo_boleto.'.pdf');
     }
+
+    public function verQr(string $codigo, Request $request)
+    {
+        $boleto = BoletoCover::where('codigo_boleto', $codigo)->firstOrFail();
+
+        if ($boleto->user_id !== $request->user()->id && ! $request->user()->es_admin) {
+            abort(403);
+        }
+
+        if (! $boleto->qr_path || ! Storage::disk('public')->exists($boleto->qr_path)) {
+            abort(404, 'El código QR todavía no está disponible.');
+        }
+
+        return Storage::disk('public')->response($boleto->qr_path);
+    }
 }

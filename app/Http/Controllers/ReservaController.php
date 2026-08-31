@@ -191,4 +191,20 @@ class ReservaController extends Controller
 
         return Storage::disk('public')->download($reserva->pdf_path, $reserva->codigo_reserva.'.pdf');
     }
+
+    public function verQr(string $codigo, Request $request)
+    {
+        $reserva = Reserva::where('codigo_reserva', $codigo)->firstOrFail();
+
+        if ($reserva->user_id !== $request->user()->id && ! $request->user()->es_admin) {
+            abort(403);
+        }
+
+        if (! $reserva->qr_path || ! Storage::disk('public')->exists($reserva->qr_path)) {
+            abort(404, 'El código QR todavía no está disponible.');
+        }
+
+        // Se sirve directo desde storage (no depende del symlink public/storage).
+        return Storage::disk('public')->response($reserva->qr_path);
+    }
 }

@@ -39,8 +39,11 @@
                                         {{ ucfirst($boleto->estado) }}
                                     </span>
                                 </td>
-                                <td class="p-3">
-                                    <a href="{{ route('cover.ticket', $boleto->codigo_boleto) }}" class="text-amber-400 hover:text-amber-300 text-xs font-bold underline">
+                                <td class="p-3 whitespace-nowrap">
+                                    <a href="{{ route('cover.qr', $boleto->codigo_boleto) }}" target="_blank" class="text-amber-400 hover:text-amber-300 text-xs font-bold underline mr-3">
+                                        Ver QR
+                                    </a>
+                                    <a href="{{ route('cover.ticket', $boleto->codigo_boleto) }}" class="text-zinc-400 hover:text-zinc-300 text-xs font-bold underline">
                                         Descargar PDF
                                     </a>
                                 </td>

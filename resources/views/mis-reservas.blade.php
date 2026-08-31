@@ -43,8 +43,11 @@
                                         {{ ucfirst($reserva->estado) }}
                                     </span>
                                 </td>
-                                <td class="p-3">
-                                    <a href="{{ route('reservas.ticket', $reserva->codigo_reserva) }}" class="text-amber-400 hover:text-amber-300 text-xs font-bold underline">
+                                <td class="p-3 whitespace-nowrap">
+                                    <a href="{{ route('reservas.qr', $reserva->codigo_reserva) }}" target="_blank" class="text-amber-400 hover:text-amber-300 text-xs font-bold underline mr-3">
+                                        Ver QR
+                                    </a>
+                                    <a href="{{ route('reservas.ticket', $reserva->codigo_reserva) }}" class="text-zinc-400 hover:text-zinc-300 text-xs font-bold underline">
                                         Descargar PDF
                                     </a>
                                 </td>
