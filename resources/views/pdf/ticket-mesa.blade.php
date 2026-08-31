@@ -7,44 +7,51 @@
         body { font-family: 'Helvetica', sans-serif; color: #f2e6c9; background: #0a0908; margin: 0; padding: 0; }
 
         .ticket { background: #0a0908; width: 100%; box-sizing: border-box; }
-
         .borde-ext { border: 1.5px solid #7a5c1e; margin: 8px; border-radius: 10px; overflow: hidden; }
         .borde-int { border: 1px solid #4a3814; margin: 3px; border-radius: 7px; overflow: hidden; }
-
         .barra-top { height: 5px; background: #c9a24b; }
 
-        .marca-wrap { text-align: center; padding: 16px 18px 4px; }
-        .marca { font-size: 8px; letter-spacing: 4px; color: #c9a24b; text-transform: uppercase; }
-        .marca-sub { font-size: 7px; letter-spacing: 2px; color: #6b5a35; margin-top: 2px; text-transform: uppercase; }
+        .marca-wrap { text-align: center; padding: 16px 18px 2px; }
+        .marca { font-size: 11px; letter-spacing: 5px; color: #c9a24b; text-transform: uppercase; font-weight: bold; }
+        .marca-sub { font-size: 7px; letter-spacing: 3px; color: #6b5a35; margin-top: 3px; text-transform: uppercase; }
 
-        .pill-wrap { text-align: center; padding: 10px 0 6px; }
-        .pill { display: inline-block; background: #c9a24b; color: #0a0908; font-size: 8.5px; font-weight: bold; letter-spacing: 2px; padding: 4px 14px; border-radius: 20px; text-transform: uppercase; }
+        .evento-wrap { text-align: center; padding: 10px 18px 4px; }
+        .evento-titulo { font-size: 26px; font-weight: 900; color: #f7ecd0; line-height: 1.05; text-transform: uppercase; }
+        .evento-subtitulo { font-size: 12px; color: #c9a24b; margin-top: 2px; font-style: italic; }
 
-        .evento-wrap { text-align: center; padding: 6px 20px 14px; }
-        .evento-titulo { font-size: 21px; font-weight: bold; color: #f7ecd0; line-height: 1.2; }
-        .evento-subtitulo { font-size: 9px; color: #9c8c6a; margin-top: 4px; letter-spacing: 1px; }
+        .fecha-wrap { text-align: center; padding: 8px 18px 12px; }
+        .fecha { font-size: 12.5px; font-weight: bold; color: #f2e6c9; letter-spacing: 1px; }
 
-        .divisor { border-top: 1px dashed #4a3814; margin: 0 20px; }
+        table.fila-superior { width: 100%; border-collapse: collapse; padding: 0 18px; }
+        table.fila-superior td { vertical-align: top; padding: 10px 18px; }
 
-        table.datos { width: 100%; border-collapse: collapse; font-size: 9.5px; margin: 14px 0; padding: 0 20px; }
-        table.datos td { padding: 7px 20px; border-bottom: 1px solid #211a0d; }
-        table.datos td.label { color: #8a7a52; text-transform: uppercase; font-size: 7.5px; letter-spacing: 1.2px; width: 45%; }
-        table.datos td.valor { font-weight: bold; text-align: right; color: #f2e6c9; font-size: 10.5px; }
-        .valor-oro { color: #d9b45f !important; }
+        table.info { width: 100%; border-collapse: collapse; font-size: 8px; }
+        table.info td { padding-right: 12px; }
+        table.info .label { color: #8a7a52; text-transform: uppercase; letter-spacing: 1px; font-size: 7px; padding-bottom: 3px; }
+        table.info .valor { color: #f2e6c9; font-weight: bold; font-size: 11px; }
+        table.info .valor-oro { color: #d9b45f; }
 
-        .perforacion { text-align: center; padding: 4px 0; }
-        .perforacion .linea { border-top: 1.5px dashed #6b5a35; margin: 0 14px; position: relative; top: 0; }
-        .perforacion .tijera { display: inline-block; background: #0a0908; color: #6b5a35; font-size: 9px; padding: 0 6px; position: relative; top: -7px; }
+        .qr-celda { width: 92px; text-align: center; }
+        .qr-marco { display: inline-block; background: #f7ecd0; padding: 6px; border-radius: 8px; }
+        .qr-marco img { width: 80px; height: 80px; display: block; }
 
-        .qr-wrap { text-align: center; padding: 16px 0 6px; }
-        .qr-marco { display: inline-block; background: #f7ecd0; padding: 10px; border-radius: 10px; }
-        .qr-marco img { width: 118px; height: 118px; display: block; }
-        .codigo { font-family: 'Courier New', monospace; font-size: 10.5px; font-weight: bold; color: #d9b45f; letter-spacing: 1.5px; margin-top: 8px; }
-        .uso-unico { font-size: 7px; color: #6b5a35; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px; }
+        .divisor-punteado { border-top: 1.5px dashed #4a3814; margin: 4px 18px 0; }
 
-        .nota { margin: 16px 18px 6px; padding: 10px 12px; background: #14100a; border: 1px solid #2a2313; border-radius: 8px; font-size: 7.5px; color: #a8946a; line-height: 1.5; text-align: center; }
+        table.info2 { width: 100%; border-collapse: collapse; font-size: 8px; margin-top: 14px; padding: 0 18px; }
+        table.info2 td { padding: 0 18px 14px; }
+        table.info2 .label { color: #8a7a52; text-transform: uppercase; letter-spacing: 1px; font-size: 7px; padding-bottom: 3px; display: block; }
+        table.info2 .valor { color: #f2e6c9; font-weight: bold; font-size: 11px; display: block; }
 
-        .footer-wrap { text-align: center; padding: 10px 0 16px; }
+        .codigo-wrap { text-align: center; padding: 2px 0 14px; }
+        .codigo { font-family: 'Courier New', monospace; font-size: 10px; font-weight: bold; color: #d9b45f; letter-spacing: 1.5px; }
+
+        .franja-web { background: #14100a; border-top: 1px solid #2a2313; border-bottom: 1px solid #2a2313; text-align: center; padding: 12px 14px; }
+        .franja-web .sitio { font-size: 11px; font-weight: bold; color: #d9b45f; letter-spacing: 0.5px; }
+        .franja-web .direccion { font-size: 8px; color: #9c8c6a; margin-top: 4px; line-height: 1.4; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .nota { margin: 14px 18px; padding: 10px 12px; background: #14100a; border: 1px solid #2a2313; border-radius: 8px; font-size: 7.5px; color: #a8946a; line-height: 1.5; text-align: center; }
+
+        .footer-wrap { text-align: center; padding: 4px 0 16px; }
         .footer-marca { font-size: 7px; letter-spacing: 3px; color: #4a3814; text-transform: uppercase; }
     </style>
 </head>
@@ -53,6 +60,14 @@
         $evento = \App\Models\Evento::where('fecha', $reserva->fecha)->where('activo', true)->first();
         $tituloEvento = $evento->titulo ?? 'Victoria Luxury Club';
         $subtituloEvento = $evento->subtitulo ?? null;
+
+        $diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        $meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        $fechaObj = $reserva->fecha;
+        $fechaFormateada = strtoupper($diasSemana[$fechaObj->dayOfWeekIso - 1].' '.$fechaObj->day.' DE '.$meses[$fechaObj->month].' '.$fechaObj->year);
+
+        $mesasTexto = $reserva->mesas->pluck('numero')->implode(', ') ?: $reserva->mesa_id;
+        $sitio = preg_replace('#^https?://#', '', config('app.url'));
     @endphp
     <div class="ticket">
         <div class="borde-ext">
@@ -64,10 +79,6 @@
                     <div class="marca-sub">Ticket Electrónico</div>
                 </div>
 
-                <div class="pill-wrap">
-                    <span class="pill">Reservación de Mesa</span>
-                </div>
-
                 <div class="evento-wrap">
                     <div class="evento-titulo">{{ $tituloEvento }}</div>
                     @if($subtituloEvento)
@@ -75,31 +86,64 @@
                     @endif
                 </div>
 
-                <div class="divisor"></div>
-
-                <table class="datos">
-                    <tr><td class="label">Titular</td><td class="valor">{{ $reserva->nombre }}</td></tr>
-                    <tr><td class="label">Fecha</td><td class="valor">{{ $reserva->fecha->format('d/m/Y') }}</td></tr>
-                    <tr><td class="label">Mesa(s)</td><td class="valor">{{ $reserva->mesas->pluck('numero')->implode(', ') ?: $reserva->mesa_id }}</td></tr>
-                    <tr><td class="label">Zona</td><td class="valor">{{ $reserva->zona }}</td></tr>
-                    <tr><td class="label">Total Pagado</td><td class="valor valor-oro">${{ number_format((float) $reserva->precio, 2) }} MXN</td></tr>
-                    <tr><td class="label">Método de Pago</td><td class="valor">{{ ucfirst($reserva->metodo_pago) }}</td></tr>
-                </table>
-
-                <div class="perforacion">
-                    <div class="linea"><span class="tijera">&#9986;</span></div>
+                <div class="fecha-wrap">
+                    <span class="fecha">{{ $fechaFormateada }}</span>
                 </div>
 
-                <div class="qr-wrap">
-                    @if($qrAbsolutePath && file_exists($qrAbsolutePath))
-                        <div class="qr-marco"><img src="{{ $qrAbsolutePath }}" alt="QR"></div>
-                    @endif
-                    <div class="codigo">{{ $reserva->codigo_reserva }}</div>
-                    <div class="uso-unico">Uso único · Preséntalo en recepción</div>
+                <table class="fila-superior">
+                    <tr>
+                        <td>
+                            <table class="info">
+                                <tr>
+                                    <td><span class="label">Precio</span><span class="valor">${{ number_format((float) $reserva->precio, 2) }}</span></td>
+                                    <td><span class="label">Cargo Servicio</span><span class="valor">$0.00</span></td>
+                                    <td><span class="label">Cantidad</span><span class="valor">1</span></td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td class="qr-celda" rowspan="2">
+                            @if($qrAbsolutePath && file_exists($qrAbsolutePath))
+                                <div class="qr-marco"><img src="{{ $qrAbsolutePath }}" alt="QR"></div>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <table class="info" style="margin-top: 10px;">
+                                <tr>
+                                    <td><span class="label">Tipo</span><span class="valor valor-oro">Mesa</span></td>
+                                    <td><span class="label">Zona</span><span class="valor">{{ $reserva->zona }}</span></td>
+                                    <td><span class="label">Mesa(s)</span><span class="valor">{{ $mesasTexto }}</span></td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                <div class="codigo-wrap">
+                    <span class="codigo">{{ $reserva->codigo_reserva }}</span>
+                </div>
+
+                <div class="divisor-punteado"></div>
+
+                <table class="info2">
+                    <tr>
+                        <td><span class="label">Titular</span><span class="valor">{{ $reserva->nombre }}</span></td>
+                        <td><span class="label">Método de Pago</span><span class="valor">{{ ucfirst($reserva->metodo_pago) }}</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="label">Total Pagado</span><span class="valor" style="color:#d9b45f;">${{ number_format((float) $reserva->precio, 2) }} MXN</span></td>
+                        <td></td>
+                    </tr>
+                </table>
+
+                <div class="franja-web">
+                    <div class="sitio">www.{{ $sitio }}</div>
+                    <div class="direccion">Boulevard Europa #12, Puebla, México, 72160</div>
                 </div>
 
                 <div class="nota">
-                    El monto pagado por esta mesa se aplica como consumo dentro del club la noche de tu reserva.
+                    El monto pagado por esta mesa se aplica como consumo dentro del club la noche de tu reserva. Este ticket es de uso único, preséntalo en recepción.
                 </div>
 
                 <div class="footer-wrap">
