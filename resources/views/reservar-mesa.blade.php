@@ -66,13 +66,15 @@
 
           <div class="grid grid-cols-[1fr_auto_1fr] items-start gap-3 mb-8">
             <div></div>
-            <div class="w-full max-w-md h-12 bg-amber-950/40 border border-amber-500/50 rounded-lg flex items-center justify-center text-sm font-black text-amber-300">
+            <div class="w-full max-w-lg h-20 bg-amber-950/40 border border-amber-500/50 rounded-lg flex items-center justify-center text-base font-black text-amber-300 tracking-wide">
               ESCENARIO
             </div>
-            <div class="flex gap-2 transform -rotate-12 mt-4">
-              @foreach(['D1', 'D2'] as $codigo)
-                @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Barra', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
-              @endforeach
+            <div class="flex justify-end pr-1">
+              <div class="flex gap-2 transform -rotate-12 mt-6 ml-4">
+                @foreach(['D1', 'D2'] as $codigo)
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Barra', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                @endforeach
+              </div>
             </div>
           </div>
 

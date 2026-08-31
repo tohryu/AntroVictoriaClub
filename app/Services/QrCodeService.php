@@ -32,9 +32,11 @@ class QrCodeService
 
         Storage::disk('public')->makeDirectory(dirname($rutaRelativa));
 
-        $qrCode = QrCode::create($payload)
-            ->setSize(320)
-            ->setMargin(10);
+        $qrCode = new QrCode(
+            data: $payload,
+            size: 320,
+            margin: 10,
+        );
 
         $writer = new PngWriter();
         $resultado = $writer->write($qrCode);

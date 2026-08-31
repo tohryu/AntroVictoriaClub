@@ -59,7 +59,7 @@
 
         <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 flex justify-between items-center">
           <span class="text-xs text-amber-400 font-bold uppercase">Total a Pagar:</span>
-          <span id="txt_total_cover" class="text-2xl font-black text-amber-400">${{ number_format($precioCover, 2) }}</span>
+          <span id="txt_total_cover" class="text-2xl font-black text-amber-400">${{ number_format($precioCover, 2) }} <span class="text-sm">MXN</span></span>
         </div>
 
         {{--
@@ -121,7 +121,7 @@
 
     function actualizarTotalCover() {
       const total = PRECIO_COVER * obtenerCantidad();
-      document.getElementById('txt_total_cover').textContent = '$' + total.toFixed(2);
+      document.getElementById('txt_total_cover').innerHTML = '$' + total.toFixed(2) + ' <span class="text-sm">MXN</span>';
       prepararPagoCoverSegunMetodo();
     }
 

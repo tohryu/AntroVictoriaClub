@@ -6,6 +6,12 @@
   <title>Reserva Confirmada - Victoria Luxury Club</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #000 !important; }
+    }
+  </style>
 </head>
 <body class="bg-black text-white antialiased font-sans relative overflow-x-hidden min-h-screen flex items-center justify-center p-4">
 
@@ -70,7 +76,7 @@
       El monto pagado por tu mesa se aplica como consumo dentro del club la noche de tu reserva.
     </div>
 
-    <div class="space-y-3">
+    <div class="space-y-3 no-print">
       <a href="{{ route('reservas.ticket', $codigo_reserva) }}" class="block w-full bg-amber-500 hover:bg-amber-400 text-black font-bold text-sm py-3 rounded-xl transition-colors">
         Descargar Ticket en PDF
       </a>
