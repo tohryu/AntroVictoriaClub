@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Victoria Luxury Club - Cartelera de Eventos</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-black text-white antialiased selection:bg-amber-500 selection:text-black font-sans relative overflow-x-hidden">
@@ -135,10 +136,19 @@
         @forelse($eventos as $evento)
           @php
             $fecha = \Carbon\Carbon::parse($evento->fecha)->locale('es');
+            $esPasado = $fecha->lt(now()->startOfDay());
           @endphp
-          <article class="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden hover:border-amber-500/50 transition-all duration-300 group flex flex-col backdrop-blur-sm">
+          <article class="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden hover:border-amber-500/50 transition-all duration-300 group flex flex-col backdrop-blur-sm {{ $esPasado ? 'grayscale hover:grayscale-0' : '' }}">
             <div class="relative h-64 overflow-hidden bg-zinc-950 flex items-center justify-center">
-              <img src="{{ Storage::url($evento->imagen) }}" alt="{{ $evento->titulo }}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500">
+              <img
+                src="{{ Storage::url($evento->imagen) }}"
+                alt="{{ $evento->titulo }}"
+                class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                @if($loop->first) loading="eager" fetchpriority="high" @else loading="lazy" @endif
+                decoding="async"
+                width="576"
+                height="1024"
+              >
               <div class="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent pointer-events-none"></div>
 
               <div class="absolute top-4 left-4 bg-black/80 backdrop-blur-md border border-amber-500/40 text-center px-3 py-1.5 rounded-xl">
@@ -175,7 +185,11 @@
                     {{ $evento->precio_etiqueta }}
                   </span>
                 </div>
-                @if($loop->first)
+                @if($esPasado)
+                  <a href="{{ Storage::url($evento->imagen) }}" target="_blank" rel="noopener noreferrer" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                    Ver Galería
+                  </a>
+                @elseif($loop->first)
                   @auth
                     <a href="{{ route('reserva.mapa') }}" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
                       Reservar Mesa

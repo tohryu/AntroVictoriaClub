@@ -69,8 +69,8 @@
             <div class="w-full h-16 bg-amber-950/40 border border-amber-500/50 rounded-lg flex items-center justify-center text-base font-black text-amber-300 tracking-wide">
               ESCENARIO
             </div>
-            <div class="flex justify-end pr-1">
-              <div class="flex gap-2 transform -rotate-12 mt-4 ml-4">
+            <div class="flex justify-start pl-1">
+              <div class="flex gap-2 transform -rotate-12 mt-4 ml-1">
                 @foreach(['D1', 'D2'] as $codigo)
                   @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Barra', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
                 @endforeach
@@ -220,7 +220,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-zinc-400 mb-2">FECHA</label>
-            <input type="date" id="input_fecha" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500">
+            <input type="date" id="input_fecha" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 [color-scheme:dark]">
           </div>
           <div class="sm:col-span-2">
             <label class="block text-xs font-bold text-zinc-400 mb-2">PERSONAS</label>

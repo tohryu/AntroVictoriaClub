@@ -14,7 +14,14 @@ class PromocionController extends Controller
     public function publicIndex()
     {
         $promociones = Promocion::where('activo', true)->get();
-        $eventos = Evento::where('activo', true)->orderBy('fecha', 'asc')->get();
+
+        $hoy = now()->toDateString();
+
+        $eventos = Evento::where('activo', true)
+            ->orderByRaw('CASE WHEN fecha >= ? THEN 0 ELSE 1 END ASC', [$hoy])
+            ->orderByRaw('CASE WHEN fecha >= ? THEN fecha END ASC', [$hoy])
+            ->orderByRaw('CASE WHEN fecha < ? THEN fecha END DESC', [$hoy])
+            ->get();
 
         return view('welcome', compact('promociones', 'eventos'));
     }
@@ -55,7 +62,7 @@ class PromocionController extends Controller
         ]);
 
         if ($request->hasFile('imagen')) {
-            $validated['imagen'] = $request->file('imagen')->store('eventos', 'public');
+            $validated['imagen'] = $this->guardarImagenComoWebp($request->file('imagen'));
         }
 
         $validated['activo'] = true;
@@ -63,6 +70,46 @@ class PromocionController extends Controller
         Evento::create($validated);
 
         return redirect()->route('admin.promociones.index')->with('success', 'Evento guardado correctamente.');
+    }
+
+    /**
+     * Convierte la imagen subida a .webp (mucho más ligero) y la guarda en
+     * storage/app/public/eventos. Si el servidor no tiene soporte de WebP
+     * en GD, guarda el archivo original tal cual (nunca truena la subida).
+     */
+    private function guardarImagenComoWebp($file): string
+    {
+        if (! function_exists('imagewebp')) {
+            return $file->store('eventos', 'public');
+        }
+
+        $extension = strtolower($file->getClientOriginalExtension());
+
+        $origen = match ($extension) {
+            'jpg', 'jpeg' => @imagecreatefromjpeg($file->getRealPath()),
+            'png' => @imagecreatefrompng($file->getRealPath()),
+            'webp' => @imagecreatefromwebp($file->getRealPath()),
+            default => null,
+        };
+
+        if (! $origen) {
+            return $file->store('eventos', 'public');
+        }
+
+        // Preserva transparencia (importante para PNG con fondo transparente)
+        imagepalettetotruecolor($origen);
+        imagealphablending($origen, true);
+        imagesavealpha($origen, true);
+
+        Storage::disk('public')->makeDirectory('eventos');
+
+        $nombreArchivo = 'eventos/'.Str::random(32).'.webp';
+        $rutaCompleta = Storage::disk('public')->path($nombreArchivo);
+
+        imagewebp($origen, $rutaCompleta, 82);
+        imagedestroy($origen);
+
+        return $nombreArchivo;
     }
 
     public function toggleStatus($id)

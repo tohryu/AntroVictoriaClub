@@ -10,10 +10,12 @@ class CoverConfiguracion extends Model
 
     protected $fillable = [
         'precio',
+        'entrada_libre',
     ];
 
     protected $casts = [
         'precio' => 'decimal:2',
+        'entrada_libre' => 'boolean',
     ];
 
     /**
@@ -27,9 +29,14 @@ class CoverConfiguracion extends Model
         return (float) (static::query()->orderBy('id')->value('precio') ?? 0);
     }
 
+    public static function entradaLibreActiva(): bool
+    {
+        return (bool) (static::query()->orderBy('id')->value('entrada_libre') ?? false);
+    }
+
     public static function precioConfigurado(): bool
     {
-        return static::precioActual() > 0;
+        return static::entradaLibreActiva() || static::precioActual() > 0;
     }
 
     public static function actualizarPrecio(float $precio): self
@@ -41,6 +48,22 @@ class CoverConfiguracion extends Model
         }
 
         $config->precio = $precio;
+        // Guardar un precio específico siempre desactiva "Entrada Libre".
+        $config->entrada_libre = false;
+        $config->save();
+
+        return $config;
+    }
+
+    public static function activarEntradaLibre(): self
+    {
+        $config = static::query()->orderBy('id')->lockForUpdate()->first();
+
+        if (! $config) {
+            $config = new self();
+        }
+
+        $config->entrada_libre = true;
         $config->save();
 
         return $config;

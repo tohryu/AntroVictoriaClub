@@ -63,4 +63,72 @@ class MesaAdminController extends Controller
 
         return redirect()->route('admin.mesas.index')->with('success', $mensaje);
     }
+
+    /**
+     * Marca/desmarca una mesa como "reservada por fuera del sistema" (por
+     * teléfono, en persona, etc.), sin necesidad de pasar por el flujo de
+     * pago en la web. También es la forma de LIBERAR una mesa después de
+     * un evento para que vuelva a estar disponible en la próxima fecha,
+     * ya que el sistema no libera mesas automáticamente.
+     */
+    public function toggleDisponibilidad(Request $request, $id)
+    {
+        try {
+            $mesa = DB::transaction(function () use ($id) {
+                $mesa = Mesa::lockForUpdate()->findOrFail($id);
+
+                if (! $mesa->disponible) {
+                    // Se está intentando volver a poner disponible: si hay una
+                    // reservación real (pagada, no cancelada, no escaneada) sobre
+                    // esta mesa, no la liberamos para evitar un doble apartado.
+                    if ($mesa->reservaActiva()) {
+                        throw new \RuntimeException('Esta mesa tiene una reservación activa en el sistema. No se puede liberar hasta que esa reservación se cancele o se complete el evento.');
+                    }
+                }
+
+                $mesa->disponible = ! $mesa->disponible;
+                $mesa->save();
+
+                return $mesa->fresh();
+            });
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            return redirect()->route('admin.mesas.index')->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Error cambiando disponibilidad de mesa '.$id.': '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            $mensajeError = config('app.debug')
+                ? 'Error de base de datos: '.$e->getMessage()
+                : 'No se pudo actualizar el estado de la mesa. Intenta de nuevo.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $mensajeError], 500);
+            }
+
+            return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
+        }
+
+        $mensaje = $mesa->disponible
+            ? "¡Mesa {$mesa->numero} vuelve a estar disponible!"
+            : "¡Mesa {$mesa->numero} marcada como reservada (bloqueada en la web)!";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje,
+                'mesa' => [
+                    'id' => $mesa->id,
+                    'numero' => $mesa->numero,
+                    'disponible' => (bool) $mesa->disponible,
+                ],
+            ]);
+        }
+
+        return redirect()->route('admin.mesas.index')->with('success', $mensaje);
+    }
 }

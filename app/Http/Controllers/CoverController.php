@@ -22,8 +22,9 @@ class CoverController extends Controller
     public function formulario()
     {
         $precioCover = CoverConfiguracion::precioActual();
+        $entradaLibre = CoverConfiguracion::entradaLibreActiva();
 
-        return view('cover', compact('precioCover'));
+        return view('cover', compact('precioCover', 'entradaLibre'));
     }
 
     public function procesar(Request $request): RedirectResponse
@@ -32,42 +33,55 @@ class CoverController extends Controller
             'nombre' => 'required|string|max:255',
             'fecha' => 'required|date|after_or_equal:today',
             'cantidad' => 'required|integer|min:1|max:20',
-            'metodo_pago' => 'required|string|in:tarjeta,paypal',
+            'metodo_pago' => 'required|string|in:tarjeta,paypal,entrada_libre',
             'referencia_pago' => 'required|string|max:255',
         ]);
 
         try {
             $boleto = DB::transaction(function () use ($validated, $request) {
-                $precioUnitario = CoverConfiguracion::precioActual();
+                // La Entrada Libre SIEMPRE se decide en el servidor (nunca se
+                // confía en lo que mande el navegador), igual que el precio.
+                $entradaLibre = CoverConfiguracion::entradaLibreActiva();
 
-                if ($precioUnitario <= 0) {
-                    throw ValidationException::withMessages([
-                        'cantidad' => 'El precio del cover todavía no ha sido configurado por el administrador.',
-                    ]);
+                if ($entradaLibre) {
+                    $precioUnitario = 0;
+                    $total = 0;
+                    $metodoPago = 'entrada_libre';
+                    $referenciaPago = 'ENTRADA-LIBRE-'.strtoupper(Str::random(8));
+                } else {
+                    $precioUnitario = CoverConfiguracion::precioActual();
+
+                    if ($precioUnitario <= 0) {
+                        throw ValidationException::withMessages([
+                            'cantidad' => 'El precio del cover todavía no ha sido configurado por el administrador.',
+                        ]);
+                    }
+
+                    $total = round($precioUnitario * $validated['cantidad'], 2);
+                    $metodoPago = $validated['metodo_pago'];
+                    $referenciaPago = $validated['referencia_pago'];
+
+                    // ===================================================================
+                    // 🧪 MODO PRUEBA — verificación de pago DESACTIVADA TEMPORALMENTE
+                    // ===================================================================
+                    // Mismo bypass que en ReservaController. Antes de producción:
+                    // 1) Borra o comenta el bloque "BYPASS TEMPORAL" de abajo.
+                    // 2) Descomenta el bloque original que sí verifica el pago.
+                    // -------------------------------------------------------------------
+                    // if ($validated['metodo_pago'] === 'tarjeta') {
+                    //     (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
+                    // } else {
+                    //     (new PaypalPaymentService())->capturarOrden($validated['referencia_pago'], $total, 'MXN');
+                    // }
+
+                    // --- BYPASS TEMPORAL: acepta cualquier referencia_pago sin cobrar ---
+                    if (empty($referenciaPago)) {
+                        throw ValidationException::withMessages([
+                            'pago' => 'Falta la referencia de pago.',
+                        ]);
+                    }
+                    // ===================================================================
                 }
-
-                $total = round($precioUnitario * $validated['cantidad'], 2);
-
-                // ===================================================================
-                // 🧪 MODO PRUEBA — verificación de pago DESACTIVADA TEMPORALMENTE
-                // ===================================================================
-                // Mismo bypass que en ReservaController. Antes de producción:
-                // 1) Borra o comenta el bloque "BYPASS TEMPORAL" de abajo.
-                // 2) Descomenta el bloque original que sí verifica el pago.
-                // -------------------------------------------------------------------
-                // if ($validated['metodo_pago'] === 'tarjeta') {
-                //     (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
-                // } else {
-                //     (new PaypalPaymentService())->capturarOrden($validated['referencia_pago'], $total, 'MXN');
-                // }
-
-                // --- BYPASS TEMPORAL: acepta cualquier referencia_pago sin cobrar ---
-                if (empty($validated['referencia_pago'])) {
-                    throw ValidationException::withMessages([
-                        'pago' => 'Falta la referencia de pago.',
-                    ]);
-                }
-                // ===================================================================
 
                 $codigoBoleto = $this->generarCodigoBoletoUnico();
 
@@ -79,9 +93,9 @@ class CoverController extends Controller
                     'cantidad' => $validated['cantidad'],
                     'precio_unitario' => $precioUnitario,
                     'precio_total' => $total,
-                    'metodo_pago' => $validated['metodo_pago'],
+                    'metodo_pago' => $metodoPago,
                     'pago_estado' => 'pagado',
-                    'pago_referencia' => $validated['referencia_pago'],
+                    'pago_referencia' => $referenciaPago,
                     'estado' => 'confirmado',
                 ]);
             });

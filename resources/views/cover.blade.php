@@ -21,10 +21,16 @@
     <div class="text-center">
       <span class="text-xs font-semibold text-amber-400 uppercase tracking-widest">Boleto Digital</span>
       <h1 class="text-3xl font-black text-white mt-1">Compra tu Cover</h1>
-      <p class="text-zinc-500 text-xs mt-2">Precio por persona: <span class="text-amber-400 font-bold">${{ number_format($precioCover, 2) }}</span> MXN</p>
+      @if($entradaLibre)
+        <p class="text-zinc-500 text-xs mt-2">
+          <span class="text-emerald-400 font-bold uppercase tracking-wide">Entrada Libre</span> — no se cobra nada hoy.
+        </p>
+      @else
+        <p class="text-zinc-500 text-xs mt-2">Precio por persona: <span class="text-amber-400 font-bold">${{ number_format($precioCover, 2) }}</span> MXN</p>
+      @endif
     </div>
 
-    @if ($precioCover <= 0)
+    @if ($precioCover <= 0 && ! $entradaLibre)
       <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
         La venta de cover todavía no está disponible. El administrador aún no ha configurado el precio.
       </div>
@@ -40,7 +46,7 @@
       </div>
     @endif
 
-    <form id="form-cover" action="{{ route('cover.procesar') }}" method="POST" class="space-y-6 {{ $precioCover <= 0 ? 'opacity-40 pointer-events-none' : '' }}">
+    <form id="form-cover" action="{{ route('cover.procesar') }}" method="POST" class="space-y-6 {{ ($precioCover <= 0 && ! $entradaLibre) ? 'opacity-40 pointer-events-none' : '' }}">
       @csrf
 
       <div class="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6 space-y-6">
@@ -51,17 +57,32 @@
 
         <div>
           <label class="block text-xs font-bold text-zinc-400 mb-2">FECHA</label>
-          <input type="date" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500">
+          <input type="date" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 [color-scheme:dark]">
         </div>
 
         <!-- Un boleto de cover = una persona (el nombre de arriba). -->
         <input type="hidden" id="input_cantidad" name="cantidad" value="1">
 
-        <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 flex justify-between items-center">
-          <span class="text-xs text-amber-400 font-bold uppercase">Total a Pagar:</span>
-          <span id="txt_total_cover" class="text-2xl font-black text-amber-400">${{ number_format($precioCover, 2) }} <span class="text-sm">MXN</span></span>
-        </div>
+        @if($entradaLibre)
+          <div class="bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-4 flex justify-between items-center">
+            <span class="text-xs text-emerald-400 font-bold uppercase">Total a Pagar:</span>
+            <span class="text-2xl font-black text-emerald-400">Entrada Libre</span>
+          </div>
+        @else
+          <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 flex justify-between items-center">
+            <span class="text-xs text-amber-400 font-bold uppercase">Total a Pagar:</span>
+            <span id="txt_total_cover" class="text-2xl font-black text-amber-400">${{ number_format($precioCover, 2) }} <span class="text-sm">MXN</span></span>
+          </div>
+        @endif
 
+        @if($entradaLibre)
+          <div class="bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-4 text-center">
+            <p class="text-emerald-400 text-xs font-bold uppercase mb-3">✓ Entrada Libre — sin costo</p>
+            <button type="button" id="btn-confirmar-cover-entrada-libre" onclick="confirmarCoverEntradaLibre()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-emerald-500/10">
+              Confirmar y Obtener QR
+            </button>
+          </div>
+        @else
         {{--
         ===================================================================
         🧪 MODO PRUEBA — bloque de pago real DESACTIVADO (comentado)
@@ -101,8 +122,9 @@
             Confirmar y Obtener QR
           </button>
         </div>
+        @endif
 
-        <input type="hidden" name="metodo_pago" id="input_metodo_pago_cover" value="tarjeta">
+        <input type="hidden" name="metodo_pago" id="input_metodo_pago_cover" value="{{ $entradaLibre ? 'entrada_libre' : 'tarjeta' }}">
         <input type="hidden" name="referencia_pago" id="input_referencia_pago_cover">
       </div>
     </form>
@@ -285,6 +307,24 @@
 
       document.getElementById('input_metodo_pago_cover').value = 'tarjeta';
       document.getElementById('input_referencia_pago_cover').value = 'PRUEBA-' + Date.now();
+      document.getElementById('form-cover').submit();
+    }
+
+    function confirmarCoverEntradaLibre() {
+      const nombre = document.querySelector('input[name="nombre"]').value.trim();
+      const fecha = document.querySelector('input[name="fecha"]').value;
+
+      if (!nombre || !fecha) {
+        alert('Completa tu nombre y fecha antes de continuar.');
+        return;
+      }
+
+      const boton = document.getElementById('btn-confirmar-cover-entrada-libre');
+      boton.disabled = true;
+      boton.textContent = 'Generando QR...';
+
+      document.getElementById('input_metodo_pago_cover').value = 'entrada_libre';
+      document.getElementById('input_referencia_pago_cover').value = 'ENTRADA-LIBRE-' + Date.now();
       document.getElementById('form-cover').submit();
     }
 

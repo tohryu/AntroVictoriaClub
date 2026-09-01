@@ -262,11 +262,22 @@
                         </h2>
                         <div class="bg-gray-950/60 p-6 rounded-xl border border-gray-800/80 max-w-sm">
                             <p class="text-xs text-gray-400 mb-4">Este es el precio por persona que se cobra al comprar un boleto digital de cover.</p>
-                            <div class="text-center mb-4">
-                                <span class="text-4xl font-black text-amber-400">${{ number_format((float) \App\Models\CoverConfiguracion::precioActual(), 2) }}</span>
-                                <span class="text-sm font-bold text-amber-400/70 ml-1">MXN</span>
-                                <span id="precio-cover-actual" class="hidden">{{ (float) \App\Models\CoverConfiguracion::precioActual() }}</span>
-                            </div>
+
+                            @if(\App\Models\CoverConfiguracion::entradaLibreActiva())
+                                <div class="text-center mb-4">
+                                    <span class="inline-block bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 text-sm font-black uppercase tracking-wide px-4 py-2 rounded-lg">
+                                        Entrada Libre Activa
+                                    </span>
+                                    <p class="text-[11px] text-gray-500 mt-2">Los clientes no pagan nada por el cover en este momento.</p>
+                                </div>
+                            @else
+                                <div class="text-center mb-4">
+                                    <span class="text-4xl font-black text-amber-400">${{ number_format((float) \App\Models\CoverConfiguracion::precioActual(), 2) }}</span>
+                                    <span class="text-sm font-bold text-amber-400/70 ml-1">MXN</span>
+                                    <span id="precio-cover-actual" class="hidden">{{ (float) \App\Models\CoverConfiguracion::precioActual() }}</span>
+                                </div>
+                            @endif
+
                             <form id="form-modificar-precio-cover">
                                 @csrf
                                 @method('PATCH')
@@ -288,6 +299,16 @@
                                     Guardar Precio de Cover
                                 </button>
                             </form>
+
+                            <div class="mt-3 pt-3 border-t border-gray-800/80">
+                                <button type="button"
+                                        id="btn-entrada-libre"
+                                        onclick="activarEntradaLibre()"
+                                        class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-4 rounded-lg transition shadow-lg text-sm cursor-pointer">
+                                    Poner Entrada Libre
+                                </button>
+                                <p class="text-[11px] text-gray-500 mt-2 text-center">La página de compra de cover mostrará "Entrada Libre" y no se cobrará nada. Para volver a cobrar, guarda un precio arriba.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -339,6 +360,18 @@
                                 Guardar Precio
                             </button>
                         </div>
+
+                        <div class="pt-3 mt-3 border-t border-gray-800/60">
+                            <p class="text-xs text-gray-400 mb-2">
+                                Estado: <span id="mesa_estado_display" class="font-bold"></span>
+                            </p>
+                            <button type="button"
+                                    id="btn-toggle-disponible"
+                                    onclick="toggleDisponibilidadMesa()"
+                                    class="w-full font-bold py-2.5 px-4 rounded-lg transition text-sm cursor-pointer">
+                            </button>
+                            <p class="text-[11px] text-gray-500 mt-2">Márcala como reservada si alguien apartó esta mesa por fuera de la página web (por teléfono, en persona, etc.). También úsalo para liberarla después de un evento.</p>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -347,6 +380,12 @@
     </div>
 
     <script>
+
+        const mesasDisponibilidad = {
+            @foreach($mesas as $m)
+                '{{ $m->id }}': {{ $m->disponible ? 'true' : 'false' }},
+            @endforeach
+        };
 
         function cambiarPlanta(planta) {
             const vistaBaja = document.getElementById('vista-planta-baja');
@@ -400,9 +439,74 @@
             document.getElementById('mensaje-seleccion').classList.add('hidden');
             document.getElementById('campos-edicion').classList.remove('hidden');
 
+            actualizarEstadoMesaUI(mesasDisponibilidad[id]);
+
             const inputPrecio = document.getElementById('precio');
             inputPrecio.focus();
             inputPrecio.select();
+        }
+
+        function actualizarEstadoMesaUI(disponible) {
+            const estadoEl = document.getElementById('mesa_estado_display');
+            const btn = document.getElementById('btn-toggle-disponible');
+
+            if (disponible) {
+                estadoEl.textContent = 'Disponible';
+                estadoEl.className = 'font-bold text-emerald-400';
+                btn.textContent = 'Marcar como Reservada';
+                btn.className = 'w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg transition text-sm cursor-pointer';
+            } else {
+                estadoEl.textContent = 'Reservada (bloqueada en la web)';
+                estadoEl.className = 'font-bold text-red-400';
+                btn.textContent = 'Marcar como Disponible';
+                btn.className = 'w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-lg transition text-sm cursor-pointer';
+            }
+        }
+
+        function toggleDisponibilidadMesa() {
+            if (!mesaSeleccionadaId) {
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const btn = document.getElementById('btn-toggle-disponible');
+            const textoOriginal = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            fetch(`/admin/mesas/${mesaSeleccionadaId}/disponibilidad`, {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(async (response) => {
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok || !data || !data.success) {
+                    const mensajeError = (data && data.message)
+                        ? data.message
+                        : 'No se pudo actualizar el estado de la mesa.';
+                    throw new Error(mensajeError);
+                }
+
+                return data;
+            })
+            .then((data) => {
+                mostrarToast(data.message, 'success');
+                mesasDisponibilidad[mesaSeleccionadaId] = data.mesa.disponible;
+                actualizarEstadoMesaUI(data.mesa.disponible);
+            })
+            .catch((error) => {
+                mostrarToast(error.message, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
         }
 
         function cancelarEdicion() {
@@ -581,6 +685,50 @@
                 submitBtn.textContent = textoOriginalBtn;
             });
         });
+
+        function activarEntradaLibre() {
+            if (!confirm('¿Poner el cover en Entrada Libre? Los clientes dejarán de pagar hasta que guardes un precio de nuevo.')) {
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const btn = document.getElementById('btn-entrada-libre');
+            const textoOriginal = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = 'Activando...';
+
+            fetch('{{ route('admin.mesas.cover.entrada_libre') }}', {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(async (response) => {
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok || !data || !data.success) {
+                    const mensajeError = (data && data.message)
+                        ? data.message
+                        : 'No se pudo activar Entrada Libre. Intenta de nuevo.';
+                    throw new Error(mensajeError);
+                }
+
+                return data;
+            })
+            .then((data) => {
+                mostrarToast(data.message, 'success');
+                window.location.reload();
+            })
+            .catch((error) => {
+                mostrarToast(error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = textoOriginal;
+            });
+        }
 
         const canvas = document.getElementById('starfield');
         const ctx = canvas.getContext('2d');

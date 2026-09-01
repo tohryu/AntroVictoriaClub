@@ -46,4 +46,37 @@ class CoverAdminController extends Controller
 
         return redirect()->route('admin.mesas.index')->with('success', $mensaje);
     }
+
+    public function activarEntradaLibre(Request $request)
+    {
+        try {
+            $config = DB::transaction(fn () => CoverConfiguracion::activarEntradaLibre());
+        } catch (\Throwable $e) {
+            Log::error('Error activando Entrada Libre: '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            $mensajeError = config('app.debug')
+                ? 'Error de base de datos: '.$e->getMessage()
+                : 'No se pudo activar Entrada Libre. Intenta de nuevo.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $mensajeError], 500);
+            }
+
+            return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
+        }
+
+        $mensaje = '¡Cover puesto en Entrada Libre! Ya no se cobrará.';
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje,
+                'entrada_libre' => (bool) $config->entrada_libre,
+            ]);
+        }
+
+        return redirect()->route('admin.mesas.index')->with('success', $mensaje);
+    }
 }
