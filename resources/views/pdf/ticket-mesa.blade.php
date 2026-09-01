@@ -16,34 +16,29 @@
         .marca-sub { font-size: 7px; letter-spacing: 3px; color: #6b5a35; margin-top: 3px; text-transform: uppercase; }
 
         .evento-wrap { text-align: center; padding: 10px 18px 4px; }
-        .evento-titulo { font-size: 26px; font-weight: 900; color: #f7ecd0; line-height: 1.05; text-transform: uppercase; }
-        .evento-subtitulo { font-size: 12px; color: #c9a24b; margin-top: 2px; font-style: italic; }
+        .evento-titulo { font-size: 24px; font-weight: 900; color: #f7ecd0; line-height: 1.1; text-transform: uppercase; }
+        .evento-subtitulo { font-size: 11px; color: #c9a24b; margin-top: 2px; font-style: italic; }
 
-        .fecha-wrap { text-align: center; padding: 8px 18px 12px; }
-        .fecha { font-size: 12.5px; font-weight: bold; color: #f2e6c9; letter-spacing: 1px; }
+        .fecha-wrap { text-align: center; padding: 6px 18px 4px; }
+        .fecha { font-size: 12px; font-weight: bold; color: #f2e6c9; letter-spacing: 1px; }
 
-        table.fila-superior { width: 100%; border-collapse: collapse; padding: 0 18px; }
-        table.fila-superior td { vertical-align: top; padding: 10px 18px; }
+        .qr-wrap { text-align: center; padding: 14px 0 6px; }
+        .qr-marco { display: inline-block; background: #f7ecd0; padding: 10px; border-radius: 10px; }
+        .qr-marco img { width: 140px; height: 140px; display: block; }
+        .codigo { font-family: 'Courier New', monospace; font-size: 10.5px; font-weight: bold; color: #d9b45f; letter-spacing: 1.5px; margin-top: 8px; }
 
-        table.info { width: 100%; border-collapse: collapse; font-size: 8px; }
-        table.info td { padding-right: 12px; }
-        table.info .label { color: #8a7a52; text-transform: uppercase; letter-spacing: 1px; font-size: 7px; padding-bottom: 3px; }
-        table.info .valor { color: #f2e6c9; font-weight: bold; font-size: 11px; }
+        .divisor-punteado { border-top: 1.5px dashed #4a3814; margin: 10px 18px 0; }
+
+        table.info { width: 100%; border-collapse: collapse; font-size: 8px; margin-top: 12px; }
+        table.info td { padding: 0 8px 12px; text-align: center; }
+        table.info .label { color: #8a7a52; text-transform: uppercase; letter-spacing: 1px; font-size: 7px; display: block; padding-bottom: 3px; }
+        table.info .valor { color: #f2e6c9; font-weight: bold; font-size: 11px; display: block; }
         table.info .valor-oro { color: #d9b45f; }
 
-        .qr-celda { width: 92px; text-align: center; }
-        .qr-marco { display: inline-block; background: #f7ecd0; padding: 6px; border-radius: 8px; }
-        .qr-marco img { width: 80px; height: 80px; display: block; }
-
-        .divisor-punteado { border-top: 1.5px dashed #4a3814; margin: 4px 18px 0; }
-
-        table.info2 { width: 100%; border-collapse: collapse; font-size: 8px; margin-top: 14px; padding: 0 18px; }
+        table.info2 { width: 100%; border-collapse: collapse; font-size: 8px; margin-top: 4px; }
         table.info2 td { padding: 0 18px 14px; }
         table.info2 .label { color: #8a7a52; text-transform: uppercase; letter-spacing: 1px; font-size: 7px; padding-bottom: 3px; display: block; }
         table.info2 .valor { color: #f2e6c9; font-weight: bold; font-size: 11px; display: block; }
-
-        .codigo-wrap { text-align: center; padding: 2px 0 14px; }
-        .codigo { font-family: 'Courier New', monospace; font-size: 10px; font-weight: bold; color: #d9b45f; letter-spacing: 1.5px; }
 
         .franja-web { background: #14100a; border-top: 1px solid #2a2313; border-bottom: 1px solid #2a2313; text-align: center; padding: 12px 14px; }
         .franja-web .sitio { font-size: 11px; font-weight: bold; color: #d9b45f; letter-spacing: 0.5px; }
@@ -90,41 +85,27 @@
                     <span class="fecha">{{ $fechaFormateada }}</span>
                 </div>
 
-                <table class="fila-superior">
-                    <tr>
-                        <td>
-                            <table class="info">
-                                <tr>
-                                    <td><span class="label">Precio</span><span class="valor">${{ number_format((float) $reserva->precio, 2) }}</span></td>
-                                    <td><span class="label">Cargo Servicio</span><span class="valor">$0.00</span></td>
-                                    <td><span class="label">Cantidad</span><span class="valor">1</span></td>
-                                </tr>
-                            </table>
-                        </td>
-                        <td class="qr-celda" rowspan="2">
-                            @if($qrAbsolutePath && file_exists($qrAbsolutePath))
-                                <div class="qr-marco"><img src="{{ $qrAbsolutePath }}" alt="QR"></div>
-                            @endif
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <table class="info" style="margin-top: 10px;">
-                                <tr>
-                                    <td><span class="label">Tipo</span><span class="valor valor-oro">Mesa</span></td>
-                                    <td><span class="label">Zona</span><span class="valor">{{ $reserva->zona }}</span></td>
-                                    <td><span class="label">Mesa(s)</span><span class="valor">{{ $mesasTexto }}</span></td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-
-                <div class="codigo-wrap">
-                    <span class="codigo">{{ $reserva->codigo_reserva }}</span>
+                <div class="qr-wrap">
+                    @if($qrAbsolutePath && file_exists($qrAbsolutePath))
+                        <div class="qr-marco"><img src="{{ $qrAbsolutePath }}" alt="QR"></div>
+                    @endif
+                    <div class="codigo">{{ $reserva->codigo_reserva }}</div>
                 </div>
 
                 <div class="divisor-punteado"></div>
+
+                <table class="info">
+                    <tr>
+                        <td><span class="label">Precio</span><span class="valor">${{ number_format((float) $reserva->precio, 2) }}</span></td>
+                        <td><span class="label">Cargo Servicio</span><span class="valor">$0.00</span></td>
+                        <td><span class="label">Cantidad</span><span class="valor">1</span></td>
+                    </tr>
+                    <tr>
+                        <td><span class="label">Tipo</span><span class="valor valor-oro">Mesa</span></td>
+                        <td><span class="label">Zona</span><span class="valor">{{ $reserva->zona }}</span></td>
+                        <td><span class="label">Mesa(s)</span><span class="valor">{{ $mesasTexto }}</span></td>
+                    </tr>
+                </table>
 
                 <table class="info2">
                     <tr>
