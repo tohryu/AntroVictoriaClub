@@ -20,7 +20,7 @@ class TicketPdfService
         $pdf = Pdf::loadView('pdf.ticket-mesa', [
             'reserva' => $reserva,
             'qrAbsolutePath' => $reserva->qr_path ? Storage::disk('public')->path($reserva->qr_path) : null,
-        ])->setPaper([0, 0, 288, 530], 'portrait');
+        ])->setPaper([0, 0, 288, 560], 'portrait');
 
         $pdf->save(Storage::disk('public')->path($rutaRelativa));
 
@@ -39,7 +39,7 @@ class TicketPdfService
         $pdf = Pdf::loadView('pdf.ticket-cover', [
             'boleto' => $boleto,
             'qrAbsolutePath' => $boleto->qr_path ? Storage::disk('public')->path($boleto->qr_path) : null,
-        ])->setPaper([0, 0, 288, 530], 'portrait');
+        ])->setPaper([0, 0, 288, 560], 'portrait');
 
         $pdf->save(Storage::disk('public')->path($rutaRelativa));
 
