@@ -98,12 +98,7 @@
             </button>
           </div>
         @else
-        {{--
-        ===================================================================
-        🧪 MODO PRUEBA — bloque de pago real DESACTIVADO (comentado)
-        Para restaurar: descomenta este bloque y borra el bypass de abajo.
-        ===================================================================
-
+        @else
         <div>
           <label class="block text-xs font-bold text-zinc-400 mb-2">MÉTODO DE PAGO</label>
           <div class="grid grid-cols-2 gap-4">
@@ -127,15 +122,6 @@
         <div id="panel-paypal-cover" class="space-y-3 hidden">
           <div id="paypal-boton-cover"></div>
           <div id="paypal-error-cover" class="text-xs text-red-400"></div>
-        </div>
-        --}}
-
-        {{-- --- BYPASS TEMPORAL: botón que salta el pago para pruebas --- --}}
-        <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 text-center">
-          <p class="text-amber-400 text-xs font-bold uppercase mb-3">🧪 Modo prueba: sin cobro real</p>
-          <button type="button" id="btn-confirmar-cover-sin-pago" onclick="confirmarCoverSinPago()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-amber-500/10">
-            Confirmar y Obtener QR
-          </button>
         </div>
         @endif
 
@@ -162,13 +148,6 @@
       prepararPagoCoverSegunMetodo();
     }
 
-    /*
-    ===================================================================
-    MODO PRUEBA: funciones de pago real comentadas.
-    Para restaurar: descomenta este bloque completo y borra
-    confirmarCoverSinPago() y prepararPagoCoverSegunMetodo() del bypass.
-    ===================================================================
-
     function cambiarMetodoPagoCover(metodo) {
       document.getElementById('input_metodo_pago_cover').value = metodo;
 
@@ -184,6 +163,13 @@
         panelPaypal.classList.remove('hidden');
         renderizarBotonPaypalCover();
       }
+    }
+
+    function prepararPagoCoverSegunMetodo() {
+      if (document.getElementById('input_metodo_pago_cover').value !== 'tarjeta') {
+        return;
+      }
+      cargarCheckoutConektaCover();
     }
 
     async function cargarCheckoutConektaCover() {
@@ -299,30 +285,6 @@
           document.getElementById('paypal-error-cover').textContent = 'Ocurrió un error con PayPal. Intenta de nuevo.';
         },
       }).render('#paypal-boton-cover');
-    }
-    */
-
-    // --- BYPASS TEMPORAL: sin Conekta/PayPal ---
-    function prepararPagoCoverSegunMetodo() {
-      // No hace nada en modo prueba.
-    }
-
-    function confirmarCoverSinPago() {
-      const nombre = document.querySelector('input[name="nombre"]').value.trim();
-      const fecha = document.querySelector('input[name="fecha"]').value;
-
-      if (!nombre || !fecha) {
-        alert('Completa tu nombre y fecha antes de continuar.');
-        return;
-      }
-
-      const boton = document.getElementById('btn-confirmar-cover-sin-pago');
-      boton.disabled = true;
-      boton.textContent = 'Generando QR...';
-
-      document.getElementById('input_metodo_pago_cover').value = 'tarjeta';
-      document.getElementById('input_referencia_pago_cover').value = 'PRUEBA-' + Date.now();
-      document.getElementById('form-cover').submit();
     }
 
     function confirmarCoverEntradaLibre() {

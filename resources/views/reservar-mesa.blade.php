@@ -253,18 +253,6 @@
           <h2 class="text-lg font-black text-white">Pago</h2>
         </div>
 
-        {{--
-        ===================================================================
-        🧪 MODO PRUEBA — bloque de pago real DESACTIVADO (comentado)
-        ===================================================================
-        Todo este bloque (método de pago + Conekta + PayPal) está comentado
-        temporalmente para poder probar el flujo completo sin pagar.
-
-        PARA RESTAURARLO: descomenta este bloque completo (quita las marcas
-        de comentario de arriba y de abajo) y borra el bloque "BYPASS
-        TEMPORAL" que está justo después de este comentario.
-        ===================================================================
-
         <div>
           <label class="block text-xs font-bold text-zinc-400 mb-2">MÉTODO DE PAGO</label>
           <div class="grid grid-cols-2 gap-4">
@@ -288,15 +276,6 @@
         <div id="panel-paypal" class="space-y-3 hidden">
           <div id="paypal-boton"></div>
           <div id="paypal-error" class="text-xs text-red-400"></div>
-        </div>
-        --}}
-
-        {{-- --- BYPASS TEMPORAL: botón que salta el pago para pruebas --- --}}
-        <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-4 text-center">
-          <p class="text-amber-400 text-xs font-bold uppercase mb-3">🧪 Modo prueba: sin cobro real</p>
-          <button type="button" id="btn-confirmar-sin-pago" onclick="confirmarSinPago()" class="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold py-4 rounded-xl transition-all shadow-lg shadow-amber-500/10">
-            Confirmar y Obtener QR
-          </button>
         </div>
 
         <input type="hidden" name="metodo_pago" id="input_metodo_pago" value="tarjeta">
@@ -414,14 +393,6 @@
     document.getElementById('input_nombre').addEventListener('input', actualizarVisibilidadPaso4);
     document.getElementById('input_fecha').addEventListener('input', actualizarVisibilidadPaso4);
 
-    /*
-    ===================================================================
-    🧪 MODO PRUEBA — funciones de pago real COMENTADAS (JS)
-    ===================================================================
-    Para restaurar: descomenta este bloque completo (quita las marcas de
-    comentario de arriba y de abajo) y borra confirmarSinPago() y el
-    prepararPagoSegunTotal() del bypass que están más adelante.
-
     function cambiarMetodoPago(metodo) {
       document.getElementById('input_metodo_pago').value = metodo;
 
@@ -436,6 +407,13 @@
         panelPaypal.classList.remove('hidden');
         renderizarBotonPaypal();
       }
+    }
+
+    function prepararPagoSegunTotal(total) {
+      if (document.getElementById('input_metodo_pago').value !== 'tarjeta') {
+        return;
+      }
+      cargarCheckoutConekta();
     }
 
     async function cargarCheckoutConekta() {
@@ -564,31 +542,6 @@
           document.getElementById('paypal-error').textContent = 'Ocurrió un error con PayPal. Intenta de nuevo.';
         },
       }).render('#paypal-boton');
-    }
-    */
-
-    // --- BYPASS TEMPORAL: sin Conekta/PayPal, solo confirma y manda el formulario ---
-    function prepararPagoSegunTotal(total) {
-      // No hace nada en modo prueba: no se carga ningún checkout real.
-    }
-
-    function confirmarSinPago() {
-      if (mesasSeleccionadas.size === 0) {
-        alert('Selecciona al menos una mesa en el mapa.');
-        return;
-      }
-      if (!document.getElementById('input_nombre').value.trim() || !document.getElementById('input_fecha').value) {
-        alert('Completa tu nombre y fecha antes de continuar.');
-        return;
-      }
-
-      const boton = document.getElementById('btn-confirmar-sin-pago');
-      boton.disabled = true;
-      boton.textContent = 'Generando QR...';
-
-      document.getElementById('input_metodo_pago').value = 'tarjeta';
-      document.getElementById('input_referencia_pago').value = 'PRUEBA-' + Date.now();
-      document.getElementById('form-reserva').submit();
     }
 
     document.getElementById('form-reserva').addEventListener('submit', function (e) {
