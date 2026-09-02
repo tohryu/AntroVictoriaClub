@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Evento;
 use App\Models\Mesa;
 use App\Models\Promocion;
 use App\Models\Reserva;
@@ -31,21 +32,34 @@ class ReservaController extends Controller
     {
         $mesas = Mesa::all();
         $mesasReservadasIds = Mesa::where('disponible', false)->pluck('id')->toArray();
+        $eventoActivo = Evento::proximoEventoActivo();
+        $ventasActivas = $eventoActivo && $eventoActivo->ventas_activas;
 
-        return view('reservar-mesa', compact('mesas', 'mesasReservadasIds'));
+        return view('reservar-mesa', compact('mesas', 'mesasReservadasIds', 'eventoActivo', 'ventasActivas'));
     }
 
     public function procesarReserva(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'fecha' => 'required|date|after_or_equal:today',
             'mesa_ids' => 'required|array|min:1',
             'mesa_ids.*' => 'integer|distinct|exists:mesas,id',
             'zona' => 'nullable|string|max:255',
             'metodo_pago' => 'required|string|in:tarjeta,paypal',
             'referencia_pago' => 'required|string|max:255',
         ]);
+
+        // La fecha de la reserva SIEMPRE es la del evento activo, decidida
+        // en el servidor — el usuario ya no puede elegir ni manipular la
+        // fecha desde el formulario (evita reservar con precios de otro
+        // evento por error o a propósito).
+        $eventoActivo = Evento::proximoEventoActivo();
+
+        if (! $eventoActivo || ! $eventoActivo->ventas_activas) {
+            return back()->withErrors(['mesa_ids' => 'Las reservaciones para el próximo evento todavía no están abiertas.'])->withInput();
+        }
+
+        $validated['fecha'] = $eventoActivo->fecha;
 
         try {
             $reserva = DB::transaction(function () use ($validated, $request) {

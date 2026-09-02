@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BoletoCover;
 use App\Models\CoverConfiguracion;
+use App\Models\Evento;
 use App\Services\Payments\ConektaPaymentService;
 use App\Services\Payments\PaymentException;
 use App\Services\Payments\PaypalPaymentService;
@@ -23,19 +24,30 @@ class CoverController extends Controller
     {
         $precioCover = CoverConfiguracion::precioActual();
         $entradaLibre = CoverConfiguracion::entradaLibreActiva();
+        $eventoActivo = Evento::proximoEventoActivo();
+        $ventasActivas = $eventoActivo && $eventoActivo->ventas_activas;
 
-        return view('cover', compact('precioCover', 'entradaLibre'));
+        return view('cover', compact('precioCover', 'entradaLibre', 'eventoActivo', 'ventasActivas'));
     }
 
     public function procesar(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'fecha' => 'required|date|after_or_equal:today',
             'cantidad' => 'required|integer|min:1|max:20',
             'metodo_pago' => 'required|string|in:tarjeta,paypal,entrada_libre',
             'referencia_pago' => 'required|string|max:255',
         ]);
+
+        // La fecha SIEMPRE es la del evento activo, decidida en el servidor
+        // (el usuario ya no puede elegir fecha desde el formulario).
+        $eventoActivo = Evento::proximoEventoActivo();
+
+        if (! $eventoActivo || ! $eventoActivo->ventas_activas) {
+            return back()->withErrors(['cantidad' => 'La venta de cover para el próximo evento todavía no está abierta.'])->withInput();
+        }
+
+        $validated['fecha'] = $eventoActivo->fecha;
 
         try {
             $boleto = DB::transaction(function () use ($validated, $request) {

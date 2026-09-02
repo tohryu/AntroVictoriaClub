@@ -36,6 +36,16 @@
       </div>
     @endif
 
+    @if (! $eventoActivo)
+      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+        No hay ningún evento próximo configurado todavía. Vuelve más tarde.
+      </div>
+    @elseif (! $ventasActivas)
+      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+        La venta de cover para <strong>{{ $eventoActivo->titulo }}</strong> ({{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM, YYYY') }}) todavía no está abierta. Vuelve más tarde.
+      </div>
+    @endif
+
     @if ($errors->any())
       <div class="bg-red-950/60 border border-red-500/50 text-red-300 text-sm rounded-xl p-4">
         <ul class="list-disc list-inside space-y-1">
@@ -46,7 +56,7 @@
       </div>
     @endif
 
-    <form id="form-cover" action="{{ route('cover.procesar') }}" method="POST" class="space-y-6 {{ ($precioCover <= 0 && ! $entradaLibre) ? 'opacity-40 pointer-events-none' : '' }}">
+    <form id="form-cover" action="{{ route('cover.procesar') }}" method="POST" class="space-y-6 {{ (($precioCover <= 0 && ! $entradaLibre) || ! $eventoActivo || ! $ventasActivas) ? 'opacity-40 pointer-events-none' : '' }}">
       @csrf
 
       <div class="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6 space-y-6">
@@ -57,7 +67,12 @@
 
         <div>
           <label class="block text-xs font-bold text-zinc-400 mb-2">FECHA</label>
-          <input type="date" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 [color-scheme:dark]">
+          <input type="date"
+                 name="fecha"
+                 value="{{ $eventoActivo ? $eventoActivo->fecha : '' }}"
+                 disabled
+                 class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-400 text-sm cursor-not-allowed [color-scheme:dark]">
+          <p class="text-[10px] text-zinc-600 mt-1">Fija: es la fecha del evento activo, no se puede cambiar.</p>
         </div>
 
         <!-- Un boleto de cover = una persona (el nombre de arriba). -->

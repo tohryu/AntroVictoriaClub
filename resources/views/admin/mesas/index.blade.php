@@ -71,6 +71,39 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="mb-6 p-4 bg-red-950/80 border-l-4 border-red-500 text-red-300 rounded-lg shadow-lg backdrop-blur-md">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="mb-6 p-5 rounded-2xl border backdrop-blur-md {{ $eventoActivo && $eventoActivo->ventas_activas ? 'bg-emerald-950/30 border-emerald-800/60' : 'bg-red-950/30 border-red-800/60' }}">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-1">Candado de Ventas — Evento Activo</h2>
+                    @if($eventoActivo)
+                        <p class="text-white font-bold text-lg">{{ $eventoActivo->titulo }}</p>
+                        <p class="text-gray-400 text-xs">{{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('dddd D [de] MMMM, YYYY') }}</p>
+                        <p class="mt-2 text-sm font-bold {{ $eventoActivo->ventas_activas ? 'text-emerald-400' : 'text-red-400' }}">
+                            {{ $eventoActivo->ventas_activas ? '● Ventas ABIERTAS — se puede reservar mesa y comprar cover' : '● Ventas CERRADAS — nadie puede reservar ni comprar todavía' }}
+                        </p>
+                    @else
+                        <p class="text-gray-400 text-sm">No hay ningún evento próximo configurado ahorita.</p>
+                    @endif
+                </div>
+
+                @if($eventoActivo)
+                    <button type="button"
+                            id="btn-toggle-ventas-evento"
+                            onclick="toggleVentasEvento()"
+                            class="whitespace-nowrap font-bold py-3 px-6 rounded-xl transition shadow-lg text-sm cursor-pointer {{ $eventoActivo->ventas_activas ? 'bg-red-700 hover:bg-red-600 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white' }}">
+                        {{ $eventoActivo->ventas_activas ? 'Desactivar Ventas' : 'Activar Ventas' }}
+                    </button>
+                @endif
+            </div>
+            <p class="text-[11px] text-gray-500 mt-3">Recuerda: primero actualiza aquí abajo los precios de mesas y del cover para este evento, y hasta el final le das a "Activar Ventas" para abrir al público.</p>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
             <div class="lg:col-span-2 bg-gray-900/70 p-6 rounded-2xl shadow-2xl border border-gray-800 backdrop-blur-md">
@@ -461,6 +494,50 @@
                 btn.textContent = 'Marcar como Disponible';
                 btn.className = 'w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-lg transition text-sm cursor-pointer';
             }
+        }
+
+        function toggleVentasEvento() {
+            const btn = document.getElementById('btn-toggle-ventas-evento');
+            if (!btn) {
+                return;
+            }
+
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const textoOriginal = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = 'Guardando...';
+
+            fetch('{{ route('admin.mesas.evento_activo.toggle_ventas') }}', {
+                method: 'PATCH',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            })
+            .then(async (response) => {
+                const data = await response.json().catch(() => null);
+
+                if (!response.ok || !data || !data.success) {
+                    const mensajeError = (data && data.message)
+                        ? data.message
+                        : 'No se pudo actualizar el estado de ventas.';
+                    throw new Error(mensajeError);
+                }
+
+                return data;
+            })
+            .then((data) => {
+                mostrarToast(data.message, 'success');
+                window.location.reload();
+            })
+            .catch((error) => {
+                mostrarToast(error.message, 'error');
+                btn.disabled = false;
+                btn.textContent = textoOriginal;
+            });
         }
 
         function toggleDisponibilidadMesa() {

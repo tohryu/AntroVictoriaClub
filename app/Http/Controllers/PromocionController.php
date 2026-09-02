@@ -23,7 +23,9 @@ class PromocionController extends Controller
             ->orderByRaw('CASE WHEN fecha < ? THEN fecha END DESC', [$hoy])
             ->get();
 
-        return view('welcome', compact('promociones', 'eventos'));
+        $eventoActivo = Evento::proximoEventoActivo();
+
+        return view('welcome', compact('promociones', 'eventos', 'eventoActivo'));
     }
 
     public function index()

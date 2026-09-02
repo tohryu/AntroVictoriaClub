@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Evento;
 use App\Models\Mesa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -13,8 +14,9 @@ class MesaAdminController extends Controller
     public function index()
     {
         $mesas = Mesa::all();
+        $eventoActivo = Evento::proximoEventoActivo();
 
-        return view('admin.mesas.index', compact('mesas'));
+        return view('admin.mesas.index', compact('mesas', 'eventoActivo'));
     }
 
     public function updatePrecio(Request $request, $id)
@@ -126,6 +128,67 @@ class MesaAdminController extends Controller
                     'numero' => $mesa->numero,
                     'disponible' => (bool) $mesa->disponible,
                 ],
+            ]);
+        }
+
+        return redirect()->route('admin.mesas.index')->with('success', $mensaje);
+    }
+
+    /**
+     * Prende/apaga el candado manual de ventas (Opción 1) para el evento
+     * que esté activo en este momento (el más próximo). Mientras esté
+     * apagado, nadie puede reservar mesa ni comprar cover para ese evento,
+     * aunque ya se vea como "el próximo" en la página principal — esto es
+     * justo para darle tiempo al admin de actualizar los precios antes de
+     * abrir la venta.
+     */
+    public function toggleVentasEvento(Request $request)
+    {
+        try {
+            $evento = DB::transaction(function () {
+                $evento = Evento::proximoEventoActivo();
+
+                if (! $evento) {
+                    throw new \RuntimeException('No hay ningún evento próximo configurado para activar/desactivar ventas.');
+                }
+
+                $evento = Evento::lockForUpdate()->findOrFail($evento->id);
+                $evento->ventas_activas = ! $evento->ventas_activas;
+                $evento->save();
+
+                return $evento->fresh();
+            });
+        } catch (\RuntimeException $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+
+            return redirect()->route('admin.mesas.index')->with('error', $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('Error cambiando ventas_activas del evento: '.$e->getMessage(), [
+                'exception' => $e,
+            ]);
+
+            $mensajeError = config('app.debug')
+                ? 'Error de base de datos: '.$e->getMessage()
+                : 'No se pudo actualizar el estado de ventas. Intenta de nuevo.';
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $mensajeError], 500);
+            }
+
+            return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
+        }
+
+        $mensaje = $evento->ventas_activas
+            ? "¡Ventas activadas para \"{$evento->titulo}\"! Ya se pueden reservar mesas y comprar cover."
+            : "Ventas pausadas para \"{$evento->titulo}\". Nadie puede reservar ni comprar cover hasta que las actives de nuevo.";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje,
+                'ventas_activas' => (bool) $evento->ventas_activas,
             ]);
         }
 

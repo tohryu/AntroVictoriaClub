@@ -61,6 +61,7 @@ Route::prefix('admin/mesas')->name('admin.mesas.')->middleware(['auth', 'admin']
     Route::patch('/cover/entrada-libre', [CoverAdminController::class, 'activarEntradaLibre'])->name('cover.entrada_libre');
     Route::patch('/{id}/precio', [MesaAdminController::class, 'updatePrecio'])->name('update_precio');
     Route::patch('/{id}/disponibilidad', [MesaAdminController::class, 'toggleDisponibilidad'])->name('toggle_disponible');
+    Route::patch('/evento-activo/ventas', [MesaAdminController::class, 'toggleVentasEvento'])->name('evento_activo.toggle_ventas');
 });
 
 Route::prefix('admin/escaner')->name('admin.escaner.')->middleware(['auth', 'admin'])->group(function () {

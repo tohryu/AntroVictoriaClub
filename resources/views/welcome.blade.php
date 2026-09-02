@@ -105,12 +105,21 @@
         </p>
         <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
           @auth
-            <a href="{{ route('reserva.mapa') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
-              Reservar Mesa
-            </a>
-            <a href="{{ route('cover.formulario') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
-              Comprar Cover
-            </a>
+            @if($eventoActivo && $eventoActivo->ventas_activas)
+              <a href="{{ route('reserva.mapa') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
+                Reservar Mesa
+              </a>
+              <a href="{{ route('cover.formulario') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
+                Comprar Cover
+              </a>
+            @else
+              <span class="w-full sm:w-auto bg-zinc-950/80 text-zinc-500 border border-zinc-800 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md flex items-center justify-center cursor-not-allowed select-none">
+                Reservar Mesa
+              </span>
+              <span class="w-full sm:w-auto bg-zinc-950/80 text-zinc-500 border border-zinc-800 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md flex items-center justify-center cursor-not-allowed select-none">
+                Comprar Cover
+              </span>
+            @endif
           @else
             <a href="{{ route('login.google') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400/90 hover:text-amber-300 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-2">
               Inicia sesión para Reservar
@@ -137,6 +146,7 @@
           @php
             $fecha = \Carbon\Carbon::parse($evento->fecha)->locale('es');
             $esPasado = $fecha->lt(now()->startOfDay());
+            $esEventoActivo = $eventoActivo && $evento->id === $eventoActivo->id;
           @endphp
           <article class="bg-zinc-900/60 border border-zinc-800 rounded-2xl overflow-hidden hover:border-amber-500/50 transition-all duration-300 group flex flex-col backdrop-blur-sm {{ $esPasado ? 'grayscale hover:grayscale-0' : '' }}">
             <div class="relative h-64 overflow-hidden bg-zinc-950 flex items-center justify-center">
@@ -178,31 +188,64 @@
                 @endif
               </div>
 
-              <div class="mt-6 pt-4 border-t border-zinc-800/80 flex items-center justify-between">
-                <div>
-                  <span class="block text-xs text-zinc-500 uppercase">Reserva desde</span>
-                  <span class="text-lg font-extrabold text-amber-400">
-                    {{ $evento->precio_etiqueta }}
-                  </span>
+              <div class="mt-6 pt-4 border-t border-zinc-800/80">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <span class="block text-xs text-zinc-500 uppercase">
+                      {{ $esEventoActivo ? 'Reservar Cover desde' : 'Reserva desde' }}
+                    </span>
+                    <span class="text-lg font-extrabold text-amber-400">
+                      @if($esEventoActivo)
+                        @if(\App\Models\CoverConfiguracion::entradaLibreActiva())
+                          Entrada Libre
+                        @else
+                          ${{ number_format((float) \App\Models\CoverConfiguracion::precioActual(), 2) }} MXN
+                        @endif
+                      @else
+                        {{ $evento->precio_etiqueta }}
+                      @endif
+                    </span>
+                  </div>
+
+                  @if($esPasado)
+                    <a href="{{ Storage::url($evento->imagen) }}" target="_blank" rel="noopener noreferrer" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                      Ver Galería
+                    </a>
+                  @elseif(! $esEventoActivo)
+                    <span class="bg-zinc-900 text-zinc-500 text-sm font-bold px-4 py-2 rounded-lg border border-zinc-800 cursor-not-allowed select-none">
+                      Próximamente
+                    </span>
+                  @endif
                 </div>
-                @if($esPasado)
-                  <a href="{{ Storage::url($evento->imagen) }}" target="_blank" rel="noopener noreferrer" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
-                    Ver Galería
-                  </a>
-                @elseif($loop->first)
-                  @auth
-                    <a href="{{ route('reserva.mapa') }}" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
-                      Reservar Mesa
-                    </a>
-                  @else
-                    <a href="{{ route('login.google') }}" class="bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
-                      Reservar Mesa
-                    </a>
-                  @endauth
-                @else
-                  <span class="bg-zinc-900 text-zinc-500 text-sm font-bold px-4 py-2 rounded-lg border border-zinc-800 cursor-not-allowed select-none">
-                    Próximamente
-                  </span>
+
+                @if($esEventoActivo)
+                  <div class="flex flex-col gap-2">
+                    @auth
+                      @if($eventoActivo->ventas_activas)
+                        <a href="{{ route('cover.formulario') }}" class="w-full text-center bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                          Comprar Cover
+                        </a>
+                        <a href="{{ route('reserva.mapa') }}" class="w-full text-center bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                          Reservar Mesa
+                        </a>
+                      @else
+                        <span class="w-full text-center block bg-zinc-900 text-zinc-500 text-sm font-bold px-4 py-2 rounded-lg border border-zinc-800 cursor-not-allowed select-none">
+                          Comprar Cover
+                        </span>
+                        <span class="w-full text-center block bg-zinc-900 text-zinc-500 text-sm font-bold px-4 py-2 rounded-lg border border-zinc-800 cursor-not-allowed select-none">
+                          Reservar Mesa
+                        </span>
+                        <p class="text-[11px] text-zinc-600 text-center">Las ventas para este evento se abren pronto.</p>
+                      @endif
+                    @else
+                      <a href="{{ route('login.google') }}" class="w-full text-center bg-amber-500 hover:bg-amber-400 text-black text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                        Comprar Cover
+                      </a>
+                      <a href="{{ route('login.google') }}" class="w-full text-center bg-zinc-800 hover:bg-amber-500 hover:text-black text-white text-sm font-bold px-4 py-2 rounded-lg transition-colors">
+                        Reservar Mesa
+                      </a>
+                    @endauth
+                  </div>
                 @endif
               </div>
             </div>
