@@ -98,7 +98,6 @@
             </button>
           </div>
         @else
-        @else
         <div>
           <label class="block text-xs font-bold text-zinc-400 mb-2">MÉTODO DE PAGO</label>
           <div class="grid grid-cols-2 gap-4">
