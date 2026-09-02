@@ -10,8 +10,10 @@ use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\Admin\MesaAdminController;
 use App\Http\Controllers\Admin\CoverAdminController;
 use App\Http\Controllers\Admin\EscanerController;
+use App\Http\Controllers\EventoGaleriaController;
 
 Route::get('/', [PromocionController::class, 'publicIndex'])->name('home');
+Route::get('/eventos/{id}/galeria', [EventoGaleriaController::class, 'mostrar'])->name('evento.galeria');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/reservar-mesa', [ReservaController::class, 'mapa'])->name('reserva.mapa');
@@ -53,6 +55,9 @@ Route::prefix('admin/promociones')->name('admin.promociones.')->middleware(['aut
     Route::post('/eventos', [PromocionController::class, 'storeEvento'])->name('eventos.store');
     Route::patch('/eventos/{id}/toggle', [PromocionController::class, 'toggleStatusEvento'])->name('eventos.toggle');
     Route::delete('/eventos/{id}', [PromocionController::class, 'destroyEvento'])->name('eventos.destroy');
+
+    Route::post('/eventos/{id}/galeria', [EventoGaleriaController::class, 'subir'])->name('eventos.galeria.subir');
+    Route::delete('/eventos/{id}/galeria/{imagenId}', [EventoGaleriaController::class, 'eliminar'])->name('eventos.galeria.eliminar');
 });
 
 Route::prefix('admin/mesas')->name('admin.mesas.')->middleware(['auth', 'admin'])->group(function () {
@@ -61,7 +66,7 @@ Route::prefix('admin/mesas')->name('admin.mesas.')->middleware(['auth', 'admin']
     Route::patch('/cover/entrada-libre', [CoverAdminController::class, 'activarEntradaLibre'])->name('cover.entrada_libre');
     Route::patch('/{id}/precio', [MesaAdminController::class, 'updatePrecio'])->name('update_precio');
     Route::patch('/{id}/disponibilidad', [MesaAdminController::class, 'toggleDisponibilidad'])->name('toggle_disponible');
-    Route::patch('/evento-activo/ventas', [MesaAdminController::class, 'toggleVentasEvento'])->name('evento_activo.toggle_ventas');
+    Route::patch('/evento/{id}/ventas', [MesaAdminController::class, 'toggleVentasEvento'])->name('evento.toggle_ventas');
 });
 
 Route::prefix('admin/escaner')->name('admin.escaner.')->middleware(['auth', 'admin'])->group(function () {

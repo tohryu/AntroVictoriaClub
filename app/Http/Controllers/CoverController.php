@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\BoletoCover;
-use App\Models\CoverConfiguracion;
 use App\Models\Evento;
 use App\Services\Payments\ConektaPaymentService;
 use App\Services\Payments\PaymentException;
@@ -20,11 +19,23 @@ use Illuminate\Validation\ValidationException;
 
 class CoverController extends Controller
 {
-    public function formulario()
+    public function formulario(Request $request)
     {
-        $precioCover = CoverConfiguracion::precioActual();
-        $entradaLibre = CoverConfiguracion::entradaLibreActiva();
-        $eventoActivo = Evento::proximoEventoActivo();
+        $eventoId = $request->query('evento');
+        $eventoActivo = null;
+
+        if ($eventoId) {
+            $eventoActivo = Evento::where('activo', true)
+                ->where('fecha', '>=', now()->toDateString())
+                ->find($eventoId);
+        }
+
+        if (! $eventoActivo) {
+            $eventoActivo = Evento::proximoEventoActivo();
+        }
+
+        $precioCover = $eventoActivo ? (float) $eventoActivo->cover_precio : 0;
+        $entradaLibre = $eventoActivo ? (bool) $eventoActivo->cover_entrada_libre : false;
         $ventasActivas = $eventoActivo && $eventoActivo->ventas_activas;
 
         return view('cover', compact('precioCover', 'entradaLibre', 'eventoActivo', 'ventasActivas'));
@@ -34,26 +45,28 @@ class CoverController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
+            'evento_id' => 'required|integer|exists:eventos,id',
             'cantidad' => 'required|integer|min:1|max:20',
             'metodo_pago' => 'required|string|in:tarjeta,paypal,entrada_libre',
             'referencia_pago' => 'required|string|max:255',
         ]);
 
-        // La fecha SIEMPRE es la del evento activo, decidida en el servidor
-        // (el usuario ya no puede elegir fecha desde el formulario).
-        $eventoActivo = Evento::proximoEventoActivo();
+        // El evento, su fecha y su precio SIEMPRE se validan en el
+        // servidor — cada evento tiene su propio precio de cover,
+        // independiente de los demás.
+        $evento = Evento::find($validated['evento_id']);
 
-        if (! $eventoActivo || ! $eventoActivo->ventas_activas) {
-            return back()->withErrors(['cantidad' => 'La venta de cover para el próximo evento todavía no está abierta.'])->withInput();
+        if (! $evento || ! $evento->estaEnVenta()) {
+            return back()->withErrors(['cantidad' => 'La venta de cover para ese evento no está abierta en este momento.'])->withInput();
         }
 
-        $validated['fecha'] = $eventoActivo->fecha;
+        $validated['fecha'] = $evento->fecha;
 
         try {
-            $boleto = DB::transaction(function () use ($validated, $request) {
+            $boleto = DB::transaction(function () use ($validated, $request, $evento) {
                 // La Entrada Libre SIEMPRE se decide en el servidor (nunca se
                 // confía en lo que mande el navegador), igual que el precio.
-                $entradaLibre = CoverConfiguracion::entradaLibreActiva();
+                $entradaLibre = (bool) $evento->cover_entrada_libre;
 
                 if ($entradaLibre) {
                     $precioUnitario = 0;
@@ -61,11 +74,11 @@ class CoverController extends Controller
                     $metodoPago = 'entrada_libre';
                     $referenciaPago = 'ENTRADA-LIBRE-'.strtoupper(Str::random(8));
                 } else {
-                    $precioUnitario = CoverConfiguracion::precioActual();
+                    $precioUnitario = (float) $evento->cover_precio;
 
                     if ($precioUnitario <= 0) {
                         throw ValidationException::withMessages([
-                            'cantidad' => 'El precio del cover todavía no ha sido configurado por el administrador.',
+                            'cantidad' => 'El precio del cover todavía no ha sido configurado por el administrador para este evento.',
                         ]);
                     }
 
@@ -124,7 +137,7 @@ class CoverController extends Controller
 
         return view('cover-exitoso', [
             'boleto' => $boleto,
-            'qr_url' => $boleto->qr_path ? Storage::disk('public')->url($boleto->qr_path) : null,
+            'qr_url' => $boleto->qr_path ? route('cover.qr', $boleto->codigo_boleto) : null,
         ]);
     }
 

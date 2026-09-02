@@ -126,6 +126,7 @@
 
         <input type="hidden" name="metodo_pago" id="input_metodo_pago_cover" value="{{ $entradaLibre ? 'entrada_libre' : 'tarjeta' }}">
         <input type="hidden" name="referencia_pago" id="input_referencia_pago_cover">
+        <input type="hidden" name="evento_id" value="{{ $eventoActivo->id ?? '' }}">
       </div>
     </form>
   </div>
@@ -134,6 +135,7 @@
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const PRECIO_COVER = {{ (float) $precioCover }};
     const CONEKTA_PUBLIC_KEY = "{{ config('services.conekta.public_key') }}";
+    const EVENTO_ID = {{ $eventoActivo->id ?? 'null' }};
     let paypalRenderedCover = false;
 
     function obtenerCantidad() {
@@ -191,7 +193,7 @@
             'X-CSRF-TOKEN': CSRF_TOKEN,
             'Accept': 'application/json',
           },
-          body: JSON.stringify({ cantidad: obtenerCantidad() }),
+          body: JSON.stringify({ cantidad: obtenerCantidad(), evento_id: EVENTO_ID }),
         });
 
         const datos = await respuesta.json();
@@ -246,7 +248,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ cantidad: obtenerCantidad() }),
+            body: JSON.stringify({ cantidad: obtenerCantidad(), evento_id: EVENTO_ID }),
           });
 
           const datos = await respuesta.json();
@@ -266,7 +268,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ orden_id: data.orderID, cantidad: obtenerCantidad() }),
+            body: JSON.stringify({ orden_id: data.orderID, cantidad: obtenerCantidad(), evento_id: EVENTO_ID }),
           });
 
           const datos = await respuesta.json();

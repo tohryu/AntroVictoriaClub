@@ -82,7 +82,7 @@
             <div class="flex justify-start pl-1">
               <div class="flex gap-2 transform -rotate-12 mt-4 ml-1">
                 @foreach(['D1', 'D2'] as $codigo)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Barra', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Barra', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                 @endforeach
               </div>
             </div>
@@ -95,13 +95,13 @@
               <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
                   @foreach(['L1', 'L2', 'L3'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                   @endforeach
                 </div>
 
                 <div class="flex flex-col gap-2">
                   @foreach(['L4', 'L5', 'L6', 'L7', 'L8'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                   @endforeach
                 </div>
               </div>
@@ -109,13 +109,13 @@
               <div class="flex flex-col gap-4">
                 <div class="flex flex-col gap-2">
                   @foreach(['L9', 'L10', 'L11', 'L12'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                   @endforeach
                 </div>
 
                 <div class="flex flex-col gap-2">
                   @foreach(['L13', 'L14', 'L15', 'L16'] as $codigo)
-                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                    @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                   @endforeach
                 </div>
               </div>
@@ -126,7 +126,7 @@
                 <!-- Mesas redondas BL1-BL6: lado izquierdo de la pista -->
                 <div class="flex flex-col gap-2">
                   @foreach(['BL1', 'BL2', 'BL3', 'BL4', 'BL5', 'BL6'] as $codigo)
-                    @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                    @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Izq', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                   @endforeach
                 </div>
 
@@ -137,7 +137,7 @@
                 <!-- Mesas redondas BR1-BR6: lado derecho de la pista -->
                 <div class="flex flex-col gap-2">
                   @foreach(['BR1', 'BR2', 'BR3', 'BR4', 'BR5', 'BR6'] as $codigo)
-                    @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                    @include('partials.mesa-boton-redonda', ['codigo' => $codigo, 'zona' => 'VIP Pista Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                   @endforeach
                 </div>
               </div>
@@ -145,7 +145,7 @@
               <!-- Mesas E1, E2: junto a la entrada -->
               <div class="w-full flex justify-between px-2 gap-3">
                 @foreach(['E1', 'E2'] as $codigo)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Entrada', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Entrada', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                 @endforeach
               </div>
             </div>
@@ -154,12 +154,12 @@
             <div class="flex-1 grid grid-cols-2 gap-3 content-start mt-8">
               <div class="flex flex-col gap-2">
                 @foreach(['R1', 'R2', 'R3', 'R4', 'R5', 'R6', 'R7'] as $codigo)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                 @endforeach
               </div>
               <div class="flex flex-col gap-2">
                 @foreach(['R8', 'R9', 'R10', 'R11', 'R12', 'R13'] as $codigo)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => 'VIP Exterior Der', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                 @endforeach
               </div>
             </div>
@@ -192,7 +192,7 @@
               <div class="w-36 flex flex-col gap-1.5 justify-between py-1">
                 @foreach(range(1, 16) as $i)
                   @php($codigo = 'F' . $i)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => '2do Piso - Pared', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => '2do Piso - Pared', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                 @endforeach
               </div>
             </div>
@@ -201,7 +201,7 @@
               <div class="grid grid-cols-4 gap-4 max-w-xl mx-auto">
                 @foreach(range(1, 4) as $i)
                   @php($codigo = 'A' . $i)
-                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => '2do Piso - Centro', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds])
+                  @include('partials.mesa-boton', ['codigo' => $codigo, 'zona' => '2do Piso - Centro', 'mesas' => $mesas, 'mesasReservadasIds' => $mesasReservadasIds, 'mapaPrecios' => $mapaPrecios])
                 @endforeach
               </div>
             </div>
@@ -281,6 +281,7 @@
         <input type="hidden" name="metodo_pago" id="input_metodo_pago" value="tarjeta">
         <input type="hidden" name="referencia_pago" id="input_referencia_pago">
         <input type="hidden" name="zona" id="input_zona">
+        <input type="hidden" name="evento_id" value="{{ $eventoActivo->id ?? '' }}">
         <div id="mesa_ids_hidden"></div>
       </div>
 
@@ -290,6 +291,7 @@
   <script>
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const CONEKTA_PUBLIC_KEY = "{{ config('services.conekta.public_key') }}";
+    const EVENTO_ID = {{ $eventoActivo->id ?? 'null' }};
     let paypalRendered = false;
 
     const mesasSeleccionadas = new Map();
@@ -445,7 +447,7 @@
             'X-CSRF-TOKEN': CSRF_TOKEN,
             'Accept': 'application/json',
           },
-          body: JSON.stringify({ mesa_ids: mesaIds }),
+          body: JSON.stringify({ mesa_ids: mesaIds, evento_id: EVENTO_ID }),
         });
 
         const datos = await respuesta.json();
@@ -502,7 +504,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ mesa_ids: mesaIds }),
+            body: JSON.stringify({ mesa_ids: mesaIds, evento_id: EVENTO_ID }),
           });
 
           const datos = await respuesta.json();
@@ -524,7 +526,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ orden_id: data.orderID, mesa_ids: mesaIds }),
+            body: JSON.stringify({ orden_id: data.orderID, mesa_ids: mesaIds, evento_id: EVENTO_ID }),
           });
 
           const datos = await respuesta.json();

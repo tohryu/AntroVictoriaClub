@@ -1,7 +1,8 @@
 @php
     $m = $mesas->firstWhere('numero', $codigo);
     $id = $m ? $m->id : '';
-    $p = $m ? (float) $m->precio : 0;
+    $mapaPrecios = $mapaPrecios ?? [];
+    $p = $m ? (array_key_exists($m->id, $mapaPrecios) ? (float) $mapaPrecios[$m->id] : (float) $m->precio) : 0;
     $disponible = $m ? ! in_array($m->id, $mesasReservadasIds) : false;
 @endphp
 <button type="button"

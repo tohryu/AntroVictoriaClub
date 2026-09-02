@@ -11,30 +11,50 @@ use Illuminate\Support\Facades\Log;
 
 class MesaAdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $mesas = Mesa::all();
-        $eventoActivo = Evento::proximoEventoActivo();
+        $eventosDisponibles = Evento::futurosActivos();
 
-        return view('admin.mesas.index', compact('mesas', 'eventoActivo'));
+        $eventoId = $request->query('evento');
+        $eventoSeleccionado = $eventoId ? $eventosDisponibles->firstWhere('id', (int) $eventoId) : null;
+
+        if (! $eventoSeleccionado) {
+            $eventoSeleccionado = $eventosDisponibles->first();
+        }
+
+        $mapaPrecios = $eventoSeleccionado ? $eventoSeleccionado->mapaPreciosMesa() : [];
+        $mesasOcupadasIds = $eventoSeleccionado ? $eventoSeleccionado->mesasOcupadasIds() : [];
+
+        // Se mantiene "eventoActivo" por compatibilidad con el resto de la
+        // vista (candado de ventas, etc.) — ahora apunta al evento que el
+        // admin está viendo/editando en este momento, no siempre "el
+        // próximo évento" fijo.
+        $eventoActivo = $eventoSeleccionado;
+
+        return view('admin.mesas.index', compact('mesas', 'eventoActivo', 'eventoSeleccionado', 'eventosDisponibles', 'mapaPrecios', 'mesasOcupadasIds'));
     }
 
     public function updatePrecio(Request $request, $id)
     {
         $validado = $request->validate([
             'precio' => 'required|numeric|min:0|max:999999.99',
+            'evento_id' => 'required|integer|exists:eventos,id',
         ]);
 
         try {
             $mesa = DB::transaction(function () use ($validado, $id) {
                 $mesa = Mesa::lockForUpdate()->findOrFail($id);
-                $mesa->precio = $validado['precio'];
-                $mesa->save();
 
-                return $mesa->fresh();
+                \App\Models\EventoMesaPrecio::updateOrCreate(
+                    ['evento_id' => $validado['evento_id'], 'mesa_id' => $mesa->id],
+                    ['precio' => $validado['precio']]
+                );
+
+                return $mesa;
             });
         } catch (\Throwable $e) {
-            Log::error('Error actualizando precio de mesa '.$id.': '.$e->getMessage(), [
+            Log::error('Error actualizando precio de mesa '.$id.' para el evento: '.$e->getMessage(), [
                 'exception' => $e,
             ]);
 
@@ -49,7 +69,7 @@ class MesaAdminController extends Controller
             return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
         }
 
-        $mensaje = "¡Precio de {$mesa->numero} actualizado a $".number_format((float) $mesa->precio, 2).'!';
+        $mensaje = "¡Precio de {$mesa->numero} actualizado a $".number_format((float) $validado['precio'], 2).' para este evento!';
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -58,7 +78,7 @@ class MesaAdminController extends Controller
                 'mesa' => [
                     'id' => $mesa->id,
                     'numero' => $mesa->numero,
-                    'precio' => (float) $mesa->precio,
+                    'precio' => (float) $validado['precio'],
                 ],
             ]);
         }
@@ -75,23 +95,39 @@ class MesaAdminController extends Controller
      */
     public function toggleDisponibilidad(Request $request, $id)
     {
-        try {
-            $mesa = DB::transaction(function () use ($id) {
-                $mesa = Mesa::lockForUpdate()->findOrFail($id);
+        $validado = $request->validate([
+            'evento_id' => 'required|integer|exists:eventos,id',
+        ]);
 
-                if (! $mesa->disponible) {
-                    // Se está intentando volver a poner disponible: si hay una
-                    // reservación real (pagada, no cancelada, no escaneada) sobre
-                    // esta mesa, no la liberamos para evitar un doble apartado.
-                    if ($mesa->reservaActiva()) {
-                        throw new \RuntimeException('Esta mesa tiene una reservación activa en el sistema. No se puede liberar hasta que esa reservación se cancele o se complete el evento.');
+        try {
+            $resultado = DB::transaction(function () use ($id, $validado) {
+                $mesa = Mesa::lockForUpdate()->findOrFail($id);
+                $evento = Evento::findOrFail($validado['evento_id']);
+
+                $bloqueo = \App\Models\MesaBloqueoEvento::where('mesa_id', $mesa->id)
+                    ->where('evento_id', $evento->id)
+                    ->first();
+
+                if ($bloqueo) {
+                    // Se está intentando volver a poner disponible PARA ESTE
+                    // EVENTO: si hay una reservación real (pagada, no
+                    // cancelada) para la fecha de este evento, no la
+                    // liberamos, para evitar un doble apartado.
+                    if ($mesa->tieneReservaRealParaFecha($evento->fecha)) {
+                        throw new \RuntimeException('Esta mesa tiene una reservación real activa para este evento. No se puede liberar hasta que esa reservación se cancele.');
                     }
+
+                    $bloqueo->delete();
+                    $disponible = true;
+                } else {
+                    \App\Models\MesaBloqueoEvento::create([
+                        'mesa_id' => $mesa->id,
+                        'evento_id' => $evento->id,
+                    ]);
+                    $disponible = false;
                 }
 
-                $mesa->disponible = ! $mesa->disponible;
-                $mesa->save();
-
-                return $mesa->fresh();
+                return ['mesa' => $mesa, 'disponible' => $disponible];
             });
         } catch (\RuntimeException $e) {
             if ($request->wantsJson() || $request->ajax()) {
@@ -100,7 +136,7 @@ class MesaAdminController extends Controller
 
             return redirect()->route('admin.mesas.index')->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            Log::error('Error cambiando disponibilidad de mesa '.$id.': '.$e->getMessage(), [
+            Log::error('Error cambiando disponibilidad de mesa '.$id.' para el evento: '.$e->getMessage(), [
                 'exception' => $e,
             ]);
 
@@ -115,9 +151,12 @@ class MesaAdminController extends Controller
             return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
         }
 
-        $mensaje = $mesa->disponible
-            ? "¡Mesa {$mesa->numero} vuelve a estar disponible!"
-            : "¡Mesa {$mesa->numero} marcada como reservada (bloqueada en la web)!";
+        $mesa = $resultado['mesa'];
+        $disponible = $resultado['disponible'];
+
+        $mensaje = $disponible
+            ? "¡Mesa {$mesa->numero} vuelve a estar disponible para este evento!"
+            : "¡Mesa {$mesa->numero} marcada como reservada (bloqueada) para este evento!";
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -126,7 +165,7 @@ class MesaAdminController extends Controller
                 'mesa' => [
                     'id' => $mesa->id,
                     'numero' => $mesa->numero,
-                    'disponible' => (bool) $mesa->disponible,
+                    'disponible' => $disponible,
                 ],
             ]);
         }
@@ -135,37 +174,25 @@ class MesaAdminController extends Controller
     }
 
     /**
-     * Prende/apaga el candado manual de ventas (Opción 1) para el evento
-     * que esté activo en este momento (el más próximo). Mientras esté
-     * apagado, nadie puede reservar mesa ni comprar cover para ese evento,
-     * aunque ya se vea como "el próximo" en la página principal — esto es
-     * justo para darle tiempo al admin de actualizar los precios antes de
-     * abrir la venta.
+     * Prende/apaga el candado manual de ventas (Opción 1) para UN evento
+     * específico — cada evento tiene el suyo, independiente de los demás.
+     * Mientras esté apagado, nadie puede reservar mesa ni comprar cover
+     * para ese evento en particular, aunque ya haya pasado su turno o ya
+     * tenga precios configurados — esto le da tiempo al admin de revisar
+     * todo antes de abrir la venta de cada evento.
      */
-    public function toggleVentasEvento(Request $request)
+    public function toggleVentasEvento(Request $request, $id)
     {
         try {
-            $evento = DB::transaction(function () {
-                $evento = Evento::proximoEventoActivo();
-
-                if (! $evento) {
-                    throw new \RuntimeException('No hay ningún evento próximo configurado para activar/desactivar ventas.');
-                }
-
-                $evento = Evento::lockForUpdate()->findOrFail($evento->id);
+            $evento = DB::transaction(function () use ($id) {
+                $evento = Evento::lockForUpdate()->findOrFail($id);
                 $evento->ventas_activas = ! $evento->ventas_activas;
                 $evento->save();
 
                 return $evento->fresh();
             });
-        } catch (\RuntimeException $e) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
-            }
-
-            return redirect()->route('admin.mesas.index')->with('error', $e->getMessage());
         } catch (\Throwable $e) {
-            Log::error('Error cambiando ventas_activas del evento: '.$e->getMessage(), [
+            Log::error('Error cambiando ventas_activas del evento '.$id.': '.$e->getMessage(), [
                 'exception' => $e,
             ]);
 

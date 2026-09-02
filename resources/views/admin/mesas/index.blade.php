@@ -77,27 +77,43 @@
             </div>
         @endif
 
-        <div class="mb-6 p-5 rounded-2xl border backdrop-blur-md {{ $eventoActivo && $eventoActivo->ventas_activas ? 'bg-emerald-950/30 border-emerald-800/60' : 'bg-red-950/30 border-red-800/60' }}">
+        <div class="mb-6 p-5 rounded-2xl border backdrop-blur-md bg-gray-900/70 border-gray-800">
+            <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">Editando precios para el evento</h2>
+            @if($eventosDisponibles->isEmpty())
+                <p class="text-gray-400 text-sm">No hay ningún evento próximo configurado todavía. Crea uno en "Próximos Eventos".</p>
+            @else
+                <select id="selector-evento" onchange="cambiarEventoSeleccionado(this.value)" class="w-full sm:w-auto bg-gray-950 border border-gray-700 rounded-lg px-4 py-2.5 text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+                    @foreach($eventosDisponibles as $ev)
+                        <option value="{{ $ev->id }}" @selected($eventoSeleccionado && $eventoSeleccionado->id === $ev->id)>
+                            {{ \Carbon\Carbon::parse($ev->fecha)->locale('es')->isoFormat('D MMM') }} — {{ $ev->titulo }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="text-[11px] text-gray-500 mt-2">Cada evento tiene sus propios precios de mesas y de cover, totalmente independientes de los demás — no hace falta esperar a que pase uno para configurar y vender el siguiente.</p>
+            @endif
+        </div>
+
+        <div class="mb-6 p-5 rounded-2xl border backdrop-blur-md {{ $eventoSeleccionado && $eventoSeleccionado->ventas_activas ? 'bg-emerald-950/30 border-emerald-800/60' : 'bg-red-950/30 border-red-800/60' }}">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-1">Candado de Ventas — Evento Activo</h2>
-                    @if($eventoActivo)
-                        <p class="text-white font-bold text-lg">{{ $eventoActivo->titulo }}</p>
-                        <p class="text-gray-400 text-xs">{{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('dddd D [de] MMMM, YYYY') }}</p>
-                        <p class="mt-2 text-sm font-bold {{ $eventoActivo->ventas_activas ? 'text-emerald-400' : 'text-red-400' }}">
-                            {{ $eventoActivo->ventas_activas ? '● Ventas ABIERTAS — se puede reservar mesa y comprar cover' : '● Ventas CERRADAS — nadie puede reservar ni comprar todavía' }}
+                    <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-1">Candado de Ventas de este evento</h2>
+                    @if($eventoSeleccionado)
+                        <p class="text-white font-bold text-lg">{{ $eventoSeleccionado->titulo }}</p>
+                        <p class="text-gray-400 text-xs">{{ \Carbon\Carbon::parse($eventoSeleccionado->fecha)->locale('es')->isoFormat('dddd D [de] MMMM, YYYY') }}</p>
+                        <p class="mt-2 text-sm font-bold {{ $eventoSeleccionado->ventas_activas ? 'text-emerald-400' : 'text-red-400' }}">
+                            {{ $eventoSeleccionado->ventas_activas ? '● Ventas ABIERTAS — se puede reservar mesa y comprar cover' : '● Ventas CERRADAS — nadie puede reservar ni comprar todavía' }}
                         </p>
                     @else
-                        <p class="text-gray-400 text-sm">No hay ningún evento próximo configurado ahorita.</p>
+                        <p class="text-gray-400 text-sm">Selecciona un evento arriba.</p>
                     @endif
                 </div>
 
-                @if($eventoActivo)
+                @if($eventoSeleccionado)
                     <button type="button"
                             id="btn-toggle-ventas-evento"
                             onclick="toggleVentasEvento()"
-                            class="whitespace-nowrap font-bold py-3 px-6 rounded-xl transition shadow-lg text-sm cursor-pointer {{ $eventoActivo->ventas_activas ? 'bg-red-700 hover:bg-red-600 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white' }}">
-                        {{ $eventoActivo->ventas_activas ? 'Desactivar Ventas' : 'Activar Ventas' }}
+                            class="whitespace-nowrap font-bold py-3 px-6 rounded-xl transition shadow-lg text-sm cursor-pointer {{ $eventoSeleccionado->ventas_activas ? 'bg-red-700 hover:bg-red-600 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white' }}">
+                        {{ $eventoSeleccionado->ventas_activas ? 'Desactivar Ventas' : 'Activar Ventas' }}
                     </button>
                 @endif
             </div>
@@ -119,7 +135,7 @@
                                 @php
                                     $codigo = 'L' . $i;
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -141,7 +157,7 @@
                                 @php
                                     $codigo = 'R' . $i;
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -163,7 +179,7 @@
                                 @php
                                     $codigo = 'BL' . $i;
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -185,7 +201,7 @@
                                 @php
                                     $codigo = 'BR' . $i;
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -206,7 +222,7 @@
                             @foreach(['D1', 'D2'] as $codigo)
                                 @php
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -227,7 +243,7 @@
                             @foreach(['E1', 'E2'] as $codigo)
                                 @php
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -252,7 +268,7 @@
                                 @php
                                     $codigo = 'F' . $i;
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -274,7 +290,7 @@
                                 @php
                                     $codigo = 'A' . $i;
                                     $mesa = $mesas->firstWhere('numero', $codigo);
-                                    $precio = $mesa ? $mesa->precio : 0.00;
+                                    $precio = $mesa ? ($mapaPrecios[$mesa->id] ?? $mesa->precio) : 0.00;
                                     $id = $mesa ? $mesa->id : '';
                                 @endphp
                                 <button type="button"
@@ -296,18 +312,18 @@
                         <div class="bg-gray-950/60 p-6 rounded-xl border border-gray-800/80 max-w-sm">
                             <p class="text-xs text-gray-400 mb-4">Este es el precio por persona que se cobra al comprar un boleto digital de cover.</p>
 
-                            @if(\App\Models\CoverConfiguracion::entradaLibreActiva())
+                            @if($eventoSeleccionado && $eventoSeleccionado->cover_entrada_libre)
                                 <div class="text-center mb-4">
                                     <span class="inline-block bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 text-sm font-black uppercase tracking-wide px-4 py-2 rounded-lg">
                                         Entrada Libre Activa
                                     </span>
-                                    <p class="text-[11px] text-gray-500 mt-2">Los clientes no pagan nada por el cover en este momento.</p>
+                                    <p class="text-[11px] text-gray-500 mt-2">Los clientes no pagan nada por el cover de este evento.</p>
                                 </div>
                             @else
                                 <div class="text-center mb-4">
-                                    <span class="text-4xl font-black text-amber-400">${{ number_format((float) \App\Models\CoverConfiguracion::precioActual(), 2) }}</span>
+                                    <span class="text-4xl font-black text-amber-400">${{ number_format((float) ($eventoSeleccionado->cover_precio ?? 0), 2) }}</span>
                                     <span class="text-sm font-bold text-amber-400/70 ml-1">MXN</span>
-                                    <span id="precio-cover-actual" class="hidden">{{ (float) \App\Models\CoverConfiguracion::precioActual() }}</span>
+                                    <span id="precio-cover-actual" class="hidden">{{ (float) ($eventoSeleccionado->cover_precio ?? 0) }}</span>
                                 </div>
                             @endif
 
@@ -323,7 +339,7 @@
                                            inputmode="decimal"
                                            id="precio-cover-input"
                                            name="precio"
-                                           value="{{ number_format((float) \App\Models\CoverConfiguracion::precioActual(), 2) }}"
+                                           value="{{ number_format((float) ($eventoSeleccionado->cover_precio ?? 0), 2) }}"
                                            onblur="formatearCampoPrecio(this)"
                                            class="w-full pl-7 bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-white font-semibold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
                                            required>
@@ -403,7 +419,7 @@
                                     onclick="toggleDisponibilidadMesa()"
                                     class="w-full font-bold py-2.5 px-4 rounded-lg transition text-sm cursor-pointer">
                             </button>
-                            <p class="text-[11px] text-gray-500 mt-2">Márcala como reservada si alguien apartó esta mesa por fuera de la página web (por teléfono, en persona, etc.). También úsalo para liberarla después de un evento.</p>
+                            <p class="text-[11px] text-gray-500 mt-2">Márcala como reservada si alguien apartó esta mesa por fuera de la página web (por teléfono, en persona, etc.) — solo para el evento seleccionado arriba. Las demás fechas no se afectan.</p>
                         </div>
                     </div>
                 </form>
@@ -414,9 +430,23 @@
 
     <script>
 
+        const EVENTO_SELECCIONADO_ID = {{ $eventoSeleccionado->id ?? 'null' }};
+
+        const mesasPreciosEvento = {
+            @foreach($mapaPrecios as $mesaId => $precio)
+                '{{ $mesaId }}': {{ (float) $precio }},
+            @endforeach
+        };
+
+        function cambiarEventoSeleccionado(eventoId) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('evento', eventoId);
+            window.location.href = url.toString();
+        }
+
         const mesasDisponibilidad = {
             @foreach($mesas as $m)
-                '{{ $m->id }}': {{ $m->disponible ? 'true' : 'false' }},
+                '{{ $m->id }}': {{ in_array($m->id, $mesasOcupadasIds) ? 'false' : 'true' }},
             @endforeach
         };
 
@@ -489,7 +519,7 @@
                 btn.textContent = 'Marcar como Reservada';
                 btn.className = 'w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2.5 px-4 rounded-lg transition text-sm cursor-pointer';
             } else {
-                estadoEl.textContent = 'Reservada (bloqueada en la web)';
+                estadoEl.textContent = 'Reservada para este evento';
                 estadoEl.className = 'font-bold text-red-400';
                 btn.textContent = 'Marcar como Disponible';
                 btn.className = 'w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-2.5 px-4 rounded-lg transition text-sm cursor-pointer';
@@ -498,7 +528,7 @@
 
         function toggleVentasEvento() {
             const btn = document.getElementById('btn-toggle-ventas-evento');
-            if (!btn) {
+            if (!btn || !EVENTO_SELECCIONADO_ID) {
                 return;
             }
 
@@ -508,7 +538,7 @@
             btn.disabled = true;
             btn.textContent = 'Guardando...';
 
-            fetch('{{ route('admin.mesas.evento_activo.toggle_ventas') }}', {
+            fetch(`/admin/mesas/evento/${EVENTO_SELECCIONADO_ID}/ventas`, {
                 method: 'PATCH',
                 headers: {
                     'Accept': 'application/json',
@@ -560,6 +590,9 @@
                     'X-CSRF-TOKEN': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                body: JSON.stringify({
+                    evento_id: EVENTO_SELECCIONADO_ID,
+                }),
             })
             .then(async (response) => {
                 const data = await response.json().catch(() => null);
@@ -673,6 +706,7 @@
                 },
                 body: JSON.stringify({
                     precio: precioLimpio,
+                    evento_id: EVENTO_SELECCIONADO_ID,
                 }),
             })
             .then(async (response) => {
@@ -734,6 +768,7 @@
                 },
                 body: JSON.stringify({
                     precio: precioLimpio,
+                    evento_id: EVENTO_SELECCIONADO_ID,
                 }),
             })
             .then(async (response) => {
@@ -783,6 +818,9 @@
                     'X-CSRF-TOKEN': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest',
                 },
+                body: JSON.stringify({
+                    evento_id: EVENTO_SELECCIONADO_ID,
+                }),
             })
             .then(async (response) => {
                 const data = await response.json().catch(() => null);

@@ -39,4 +39,17 @@ class Mesa extends Model
             ->where('estado', '!=', 'cancelada')
             ->first();
     }
+
+    /**
+     * ¿Esta mesa tiene una reservación real (pagada, no cancelada) para
+     * una fecha específica? Se usa antes de liberar un bloqueo manual de
+     * evento, para no destapar una mesa que alguien ya pagó de verdad.
+     */
+    public function tieneReservaRealParaFecha($fecha): bool
+    {
+        return $this->reservas()
+            ->where('reservas.fecha', $fecha)
+            ->where('reservas.estado', '!=', 'cancelada')
+            ->exists();
+    }
 }

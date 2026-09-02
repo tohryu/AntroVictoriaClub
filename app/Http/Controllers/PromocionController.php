@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Promocion;
 use App\Models\Evento;
+use App\Http\Controllers\Concerns\ConvierteImagenAWebp;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class PromocionController extends Controller
 {
+    use ConvierteImagenAWebp;
 
     public function publicIndex()
     {
@@ -75,44 +77,9 @@ class PromocionController extends Controller
     }
 
     /**
-     * Convierte la imagen subida a .webp (mucho más ligero) y la guarda en
-     * storage/app/public/eventos. Si el servidor no tiene soporte de WebP
-     * en GD, guarda el archivo original tal cual (nunca truena la subida).
+     * Convierte la imagen subida a .webp — implementado en el trait
+     * ConvierteImagenAWebp (compartido con EventoGaleriaController).
      */
-    private function guardarImagenComoWebp($file): string
-    {
-        if (! function_exists('imagewebp')) {
-            return $file->store('eventos', 'public');
-        }
-
-        $extension = strtolower($file->getClientOriginalExtension());
-
-        $origen = match ($extension) {
-            'jpg', 'jpeg' => @imagecreatefromjpeg($file->getRealPath()),
-            'png' => @imagecreatefrompng($file->getRealPath()),
-            'webp' => @imagecreatefromwebp($file->getRealPath()),
-            default => null,
-        };
-
-        if (! $origen) {
-            return $file->store('eventos', 'public');
-        }
-
-        // Preserva transparencia (importante para PNG con fondo transparente)
-        imagepalettetotruecolor($origen);
-        imagealphablending($origen, true);
-        imagesavealpha($origen, true);
-
-        Storage::disk('public')->makeDirectory('eventos');
-
-        $nombreArchivo = 'eventos/'.Str::random(32).'.webp';
-        $rutaCompleta = Storage::disk('public')->path($nombreArchivo);
-
-        imagewebp($origen, $rutaCompleta, 82);
-        imagedestroy($origen);
-
-        return $nombreArchivo;
-    }
 
     public function toggleStatus($id)
     {

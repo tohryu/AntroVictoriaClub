@@ -28,20 +28,40 @@ class ReservaController extends Controller
         return view('welcome', compact('promociones'));
     }
 
-    public function mapa()
+    public function mapa(Request $request)
     {
         $mesas = Mesa::all();
-        $mesasReservadasIds = Mesa::where('disponible', false)->pluck('id')->toArray();
-        $eventoActivo = Evento::proximoEventoActivo();
-        $ventasActivas = $eventoActivo && $eventoActivo->ventas_activas;
 
-        return view('reservar-mesa', compact('mesas', 'mesasReservadasIds', 'eventoActivo', 'ventasActivas'));
+        $eventoId = $request->query('evento');
+        $eventoActivo = null;
+
+        if ($eventoId) {
+            $eventoActivo = Evento::where('activo', true)
+                ->where('fecha', '>=', now()->toDateString())
+                ->find($eventoId);
+        }
+
+        // Si no mandaron evento_id, o el que mandaron ya no es válido
+        // (vencido, borrado, etc.), cae al próximo evento por default.
+        if (! $eventoActivo) {
+            $eventoActivo = Evento::proximoEventoActivo();
+        }
+
+        $ventasActivas = $eventoActivo && $eventoActivo->ventas_activas;
+        $mapaPrecios = $eventoActivo ? $eventoActivo->mapaPreciosMesa() : [];
+
+        // La disponibilidad ahora es POR EVENTO: una mesa ocupada para
+        // este evento no bloquea la misma mesa en otra fecha/evento.
+        $mesasReservadasIds = $eventoActivo ? $eventoActivo->mesasOcupadasIds() : [];
+
+        return view('reservar-mesa', compact('mesas', 'mesasReservadasIds', 'eventoActivo', 'ventasActivas', 'mapaPrecios'));
     }
 
     public function procesarReserva(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
+            'evento_id' => 'required|integer|exists:eventos,id',
             'mesa_ids' => 'required|array|min:1',
             'mesa_ids.*' => 'integer|distinct|exists:mesas,id',
             'zona' => 'nullable|string|max:255',
@@ -49,20 +69,20 @@ class ReservaController extends Controller
             'referencia_pago' => 'required|string|max:255',
         ]);
 
-        // La fecha de la reserva SIEMPRE es la del evento activo, decidida
-        // en el servidor — el usuario ya no puede elegir ni manipular la
-        // fecha desde el formulario (evita reservar con precios de otro
-        // evento por error o a propósito).
-        $eventoActivo = Evento::proximoEventoActivo();
+        // El evento y su fecha SIEMPRE se validan en el servidor — el
+        // usuario ya no puede elegir ni manipular la fecha ni los precios
+        // desde el formulario. Cada evento tiene sus propias ventas y sus
+        // propios precios, independientes de los demás.
+        $evento = Evento::find($validated['evento_id']);
 
-        if (! $eventoActivo || ! $eventoActivo->ventas_activas) {
-            return back()->withErrors(['mesa_ids' => 'Las reservaciones para el próximo evento todavía no están abiertas.'])->withInput();
+        if (! $evento || ! $evento->estaEnVenta()) {
+            return back()->withErrors(['mesa_ids' => 'Las reservaciones para ese evento no están abiertas en este momento.'])->withInput();
         }
 
-        $validated['fecha'] = $eventoActivo->fecha;
+        $validated['fecha'] = $evento->fecha;
 
         try {
-            $reserva = DB::transaction(function () use ($validated, $request) {
+            $reserva = DB::transaction(function () use ($validated, $request, $evento) {
                 $mesas = Mesa::whereIn('id', $validated['mesa_ids'])
                     ->lockForUpdate()
                     ->get();
@@ -73,14 +93,21 @@ class ReservaController extends Controller
                     ]);
                 }
 
-                $mesaNoDisponible = $mesas->firstWhere('disponible', false);
+                // Re-checar disponibilidad DENTRO de la transacción: como
+                // lockForUpdate() ya puso en fila estas mesas, si dos
+                // personas intentan reservar la misma mesa al mismo tiempo,
+                // la segunda espera a que la primera termine y aquí ve la
+                // reservación recién creada, evitando el doble apartado.
+                $mesasOcupadasIds = $evento->mesasOcupadasIds();
+                $mesaNoDisponible = $mesas->first(fn (Mesa $m) => in_array($m->id, $mesasOcupadasIds));
                 if ($mesaNoDisponible) {
                     throw ValidationException::withMessages([
-                        'mesa_ids' => 'La mesa '.$mesaNoDisponible->numero.' ya fue reservada por otra persona. Elige otra.',
+                        'mesa_ids' => 'La mesa '.$mesaNoDisponible->numero.' ya fue reservada por otra persona para este evento. Elige otra.',
                     ]);
                 }
 
-                $total = (float) $mesas->sum('precio');
+                $mapaPrecios = $evento->mapaPreciosMesa();
+                $total = $mesas->sum(fn (Mesa $m) => $evento->precioMesa($m, $mapaPrecios));
 
                 if ($validated['metodo_pago'] === 'tarjeta') {
                     (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
@@ -105,12 +132,10 @@ class ReservaController extends Controller
                 ]);
 
                 $pivotData = $mesas->mapWithKeys(fn (Mesa $mesa) => [
-                    $mesa->id => ['precio_al_momento' => $mesa->precio],
+                    $mesa->id => ['precio_al_momento' => $evento->precioMesa($mesa, $mapaPrecios)],
                 ])->toArray();
 
                 $reserva->mesas()->attach($pivotData);
-
-                Mesa::whereIn('id', $mesas->pluck('id'))->update(['disponible' => false]);
 
                 return $reserva;
             });
@@ -149,7 +174,7 @@ class ReservaController extends Controller
             'zona' => $reserva->zona,
             'precio' => $reserva->precio,
             'metodo_pago' => $reserva->metodo_pago,
-            'qr_url' => $reserva->qr_path ? Storage::disk('public')->url($reserva->qr_path) : null,
+            'qr_url' => $reserva->qr_path ? route('reservas.qr', $reserva->codigo_reserva) : null,
         ]);
     }
 
