@@ -40,17 +40,7 @@
       </div>
     @endif
 
-    @if (! $eventoActivo)
-      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
-        No hay ningún evento próximo configurado todavía. Vuelve más tarde.
-      </div>
-    @elseif (! $ventasActivas)
-      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
-        Las reservaciones para <strong>{{ $eventoActivo->titulo }}</strong> ({{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM') }}) todavía no están abiertas. Vuelve más tarde.
-      </div>
-    @endif
-
-    <form id="form-reserva" action="{{ route('reserva.procesar') }}" method="POST" class="space-y-8 {{ (! $eventoActivo || ! $ventasActivas) ? 'opacity-40 pointer-events-none select-none' : '' }}">
+    <form id="form-reserva" action="{{ route('reserva.procesar') }}" method="POST" class="space-y-8">
       @csrf
 
       <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center font-semibold">
@@ -230,12 +220,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-zinc-400 mb-2">FECHA</label>
-            <input type="text"
-                   id="input_fecha"
-                   value="{{ $eventoActivo ? \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM, YYYY') : '' }}"
-                   disabled
-                   class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-400 text-sm cursor-not-allowed">
-            <p class="text-[10px] text-zinc-600 mt-1">Fija: es la fecha del evento activo, no se puede cambiar.</p>
+            <input type="date" id="input_fecha" name="fecha" required class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 [color-scheme:dark]">
           </div>
           <div class="sm:col-span-2">
             <label class="block text-xs font-bold text-zinc-400 mb-2">PERSONAS</label>
@@ -260,9 +245,9 @@
         Todo este bloque (método de pago + Conekta + PayPal) está comentado
         temporalmente para poder probar el flujo completo sin pagar.
 
-        PARA RESTAURARLO: descomenta este bloque completo (quita el {{-- de
-        arriba y el --}} de abajo) y borra el bloque "BYPASS TEMPORAL" que
-        está justo después de este comentario.
+        PARA RESTAURARLO: descomenta este bloque completo (quita las marcas
+        de comentario de arriba y de abajo) y borra el bloque "BYPASS
+        TEMPORAL" que está justo después de este comentario.
         ===================================================================
 
         <div>
