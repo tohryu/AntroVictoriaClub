@@ -321,7 +321,7 @@
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const CONEKTA_PUBLIC_KEY = "{{ config('services.conekta.public_key') }}";
     const EVENTO_ID = {{ $eventoActivo->id ?? 'null' }};
-    const FECHA_GENERAL = {{ $fechaGeneral ? "'".$fechaGeneral."'" : 'null' }};
+    const FECHA_GENERAL = {!! $fechaGeneral ? "'".$fechaGeneral."'" : 'null' !!};
     let paypalRendered = false;
 
     const mesasSeleccionadas = new Map();
