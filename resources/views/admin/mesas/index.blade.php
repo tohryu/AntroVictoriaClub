@@ -10,6 +10,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Modificar Precios - Control de Mesas Espacial</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
 
@@ -78,21 +79,35 @@
         @endif
 
         <div class="mb-6 p-5 rounded-2xl border backdrop-blur-md bg-gray-900/70 border-gray-800">
-            <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">Editando precios para el evento</h2>
-            @if($eventosDisponibles->isEmpty())
-                <p class="text-gray-400 text-sm">No hay ningún evento próximo configurado todavía. Crea uno en "Próximos Eventos".</p>
-            @else
-                <select id="selector-evento" onchange="cambiarEventoSeleccionado(this.value)" class="w-full sm:w-auto bg-gray-950 border border-gray-700 rounded-lg px-4 py-2.5 text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
-                    @foreach($eventosDisponibles as $ev)
-                        <option value="{{ $ev->id }}" @selected($eventoSeleccionado && $eventoSeleccionado->id === $ev->id)>
-                            {{ \Carbon\Carbon::parse($ev->fecha)->locale('es')->isoFormat('D MMM') }} — {{ $ev->titulo }}
-                        </option>
-                    @endforeach
-                </select>
-                <p class="text-[11px] text-gray-500 mt-2">Cada evento tiene sus propios precios de mesas y de cover, totalmente independientes de los demás — no hace falta esperar a que pase uno para configurar y vender el siguiente.</p>
-            @endif
+            <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">Editando precios para</h2>
+            <select id="selector-evento" onchange="cambiarEventoSeleccionado(this.value)" class="w-full sm:w-auto bg-gray-950 border border-gray-700 rounded-lg px-4 py-2.5 text-white font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+                <option value="general" @selected($modoGeneral)>General (precios por default)</option>
+                @foreach($eventosDisponibles as $ev)
+                    <option value="{{ $ev->id }}" @selected($eventoSeleccionado && $eventoSeleccionado->id === $ev->id)>
+                        {{ \Carbon\Carbon::parse($ev->fecha)->locale('es')->isoFormat('D MMM') }} — {{ $ev->titulo }}
+                    </option>
+                @endforeach
+            </select>
+            <p class="text-[11px] text-gray-500 mt-2">"General" son los precios que se usan cuando alguien reserva mesa o cover en un día sin evento. Cada evento tiene sus propios precios aparte, independientes.</p>
         </div>
 
+        <div class="mb-6 p-5 rounded-2xl border backdrop-blur-md bg-gray-900/70 border-gray-800">
+            <h2 class="text-sm font-bold text-gray-300 uppercase tracking-wide mb-2">Días de Reserva y Cover General</h2>
+            <form id="form-dias-operacion" action="{{ route('admin.mesas.dias_operacion') }}" method="POST" class="flex flex-wrap gap-3">
+                @csrf
+                @method('PATCH')
+                @foreach($diasOperacion as $dia)
+                    <label class="flex items-center gap-2 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 cursor-pointer">
+                        <input type="checkbox" name="dias[]" value="{{ $dia->dia_semana }}" @checked($dia->activo) class="accent-blue-500">
+                        <span class="text-sm text-gray-300">{{ \App\Models\DiaOperacionGeneral::$nombres[$dia->dia_semana] }}</span>
+                    </label>
+                @endforeach
+                <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 rounded-lg text-sm">Guardar Días</button>
+            </form>
+            <p class="text-[11px] text-gray-500 mt-2">Los días marcados son los días en los que alguien puede reservar mesa o comprar cover sin necesidad de un evento (usando los precios "General").</p>
+        </div>
+
+        @unless($modoGeneral)
         <div class="mb-6 p-5 rounded-2xl border backdrop-blur-md {{ $eventoSeleccionado && $eventoSeleccionado->ventas_activas ? 'bg-emerald-950/30 border-emerald-800/60' : 'bg-red-950/30 border-red-800/60' }}">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -119,6 +134,7 @@
             </div>
             <p class="text-[11px] text-gray-500 mt-3">Recuerda: primero actualiza aquí abajo los precios de mesas y del cover para este evento, y hasta el final le das a "Activar Ventas" para abrir al público.</p>
         </div>
+        @endunless
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -310,20 +326,24 @@
                             <span>Precio del Boleto de Cover</span>
                         </h2>
                         <div class="bg-gray-950/60 p-6 rounded-xl border border-gray-800/80 max-w-sm">
+                            @php
+                                $entradaLibreMostrar = $modoGeneral ? $entradaLibreGeneral : ($eventoSeleccionado->cover_entrada_libre ?? false);
+                                $precioCoverMostrar = $modoGeneral ? $precioCoverGeneral : ($eventoSeleccionado->cover_precio ?? 0);
+                            @endphp
                             <p class="text-xs text-gray-400 mb-4">Este es el precio por persona que se cobra al comprar un boleto digital de cover.</p>
 
-                            @if($eventoSeleccionado && $eventoSeleccionado->cover_entrada_libre)
+                            @if($entradaLibreMostrar)
                                 <div class="text-center mb-4">
                                     <span class="inline-block bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 text-sm font-black uppercase tracking-wide px-4 py-2 rounded-lg">
                                         Entrada Libre Activa
                                     </span>
-                                    <p class="text-[11px] text-gray-500 mt-2">Los clientes no pagan nada por el cover de este evento.</p>
+                                    <p class="text-[11px] text-gray-500 mt-2">Los clientes no pagan nada por este cover.</p>
                                 </div>
                             @else
                                 <div class="text-center mb-4">
-                                    <span class="text-4xl font-black text-amber-400">${{ number_format((float) ($eventoSeleccionado->cover_precio ?? 0), 2) }}</span>
+                                    <span class="text-4xl font-black text-amber-400">${{ number_format((float) $precioCoverMostrar, 2) }}</span>
                                     <span class="text-sm font-bold text-amber-400/70 ml-1">MXN</span>
-                                    <span id="precio-cover-actual" class="hidden">{{ (float) ($eventoSeleccionado->cover_precio ?? 0) }}</span>
+                                    <span id="precio-cover-actual" class="hidden">{{ (float) $precioCoverMostrar }}</span>
                                 </div>
                             @endif
 
@@ -339,7 +359,7 @@
                                            inputmode="decimal"
                                            id="precio-cover-input"
                                            name="precio"
-                                           value="{{ number_format((float) ($eventoSeleccionado->cover_precio ?? 0), 2) }}"
+                                           value="{{ number_format((float) $precioCoverMostrar, 2) }}"
                                            onblur="formatearCampoPrecio(this)"
                                            class="w-full pl-7 bg-gray-950 border border-gray-800 rounded-lg p-2.5 text-white font-semibold focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
                                            required>
@@ -410,6 +430,7 @@
                             </button>
                         </div>
 
+                        @unless($modoGeneral)
                         <div class="pt-3 mt-3 border-t border-gray-800/60">
                             <p class="text-xs text-gray-400 mb-2">
                                 Estado: <span id="mesa_estado_display" class="font-bold"></span>
@@ -421,6 +442,7 @@
                             </button>
                             <p class="text-[11px] text-gray-500 mt-2">Márcala como reservada si alguien apartó esta mesa por fuera de la página web (por teléfono, en persona, etc.) — solo para el evento seleccionado arriba. Las demás fechas no se afectan.</p>
                         </div>
+                        @endunless
                     </div>
                 </form>
             </div>
@@ -430,7 +452,7 @@
 
     <script>
 
-        const EVENTO_SELECCIONADO_ID = {{ $eventoSeleccionado->id ?? 'null' }};
+        const EVENTO_SELECCIONADO_ID = {{ $modoGeneral ? "'general'" : ($eventoSeleccionado->id ?? 'null') }};
 
         const mesasPreciosEvento = {
             @foreach($mapaPrecios as $mesaId => $precio)
@@ -502,7 +524,9 @@
             document.getElementById('mensaje-seleccion').classList.add('hidden');
             document.getElementById('campos-edicion').classList.remove('hidden');
 
-            actualizarEstadoMesaUI(mesasDisponibilidad[id]);
+            if (EVENTO_SELECCIONADO_ID !== 'general') {
+                actualizarEstadoMesaUI(mesasDisponibilidad[id]);
+            }
 
             const inputPrecio = document.getElementById('precio');
             inputPrecio.focus();

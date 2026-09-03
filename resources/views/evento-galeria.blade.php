@@ -6,6 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Galería — {{ $evento->titulo }} · Victoria Luxury Club</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-black text-white antialiased min-h-screen">

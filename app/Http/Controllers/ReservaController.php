@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DiaOperacionGeneral;
 use App\Models\Evento;
 use App\Models\Mesa;
 use App\Models\Promocion;
@@ -41,27 +42,52 @@ class ReservaController extends Controller
                 ->find($eventoId);
         }
 
-        // Si no mandaron evento_id, o el que mandaron ya no es válido
-        // (vencido, borrado, etc.), cae al próximo evento por default.
-        if (! $eventoActivo) {
-            $eventoActivo = Evento::proximoEventoActivo();
+        if ($eventoActivo) {
+            $ventasActivas = $eventoActivo->ventas_activas;
+            $mapaPrecios = $eventoActivo->mapaPreciosMesa();
+            $mesasReservadasIds = $eventoActivo->mesasOcupadasIds();
+            $modoGeneral = false;
+            $fechaGeneral = null;
+            $bloqueoGeneral = null;
+
+            return view('reservar-mesa', compact('mesas', 'mesasReservadasIds', 'eventoActivo', 'ventasActivas', 'mapaPrecios', 'modoGeneral', 'fechaGeneral', 'bloqueoGeneral'));
         }
 
-        $ventasActivas = $eventoActivo && $eventoActivo->ventas_activas;
-        $mapaPrecios = $eventoActivo ? $eventoActivo->mapaPreciosMesa() : [];
+        $modoGeneral = true;
+        $eventoActivo = null;
+        $ventasActivas = false;
+        $mapaPrecios = [];
+        $mesasReservadasIds = [];
+        $bloqueoGeneral = null;
+        $fechaGeneral = $request->query('fecha');
 
-        // La disponibilidad ahora es POR EVENTO: una mesa ocupada para
-        // este evento no bloquea la misma mesa en otra fecha/evento.
-        $mesasReservadasIds = $eventoActivo ? $eventoActivo->mesasOcupadasIds() : [];
+        if ($fechaGeneral) {
+            $eventoEnFecha = Evento::existeEnFecha($fechaGeneral);
 
-        return view('reservar-mesa', compact('mesas', 'mesasReservadasIds', 'eventoActivo', 'ventasActivas', 'mapaPrecios'));
+            if ($eventoEnFecha) {
+                $bloqueoGeneral = [
+                    'tipo' => 'evento',
+                    'evento' => $eventoEnFecha,
+                ];
+            } elseif (! DiaOperacionGeneral::diaPermitido($fechaGeneral)) {
+                $bloqueoGeneral = [
+                    'tipo' => 'cerrado',
+                    'dias' => DiaOperacionGeneral::nombresDiasActivos(),
+                ];
+            } else {
+                $mesasReservadasIds = Mesa::ocupadasEnFecha($fechaGeneral);
+            }
+        }
+
+        return view('reservar-mesa', compact('mesas', 'mesasReservadasIds', 'eventoActivo', 'ventasActivas', 'mapaPrecios', 'modoGeneral', 'fechaGeneral', 'bloqueoGeneral'));
     }
 
     public function procesarReserva(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'evento_id' => 'required|integer|exists:eventos,id',
+            'evento_id' => 'nullable|integer|exists:eventos,id',
+            'fecha_general' => 'nullable|date|after_or_equal:today',
             'mesa_ids' => 'required|array|min:1',
             'mesa_ids.*' => 'integer|distinct|exists:mesas,id',
             'zona' => 'nullable|string|max:255',
@@ -69,20 +95,35 @@ class ReservaController extends Controller
             'referencia_pago' => 'required|string|max:255',
         ]);
 
-        // El evento y su fecha SIEMPRE se validan en el servidor — el
-        // usuario ya no puede elegir ni manipular la fecha ni los precios
-        // desde el formulario. Cada evento tiene sus propias ventas y sus
-        // propios precios, independientes de los demás.
-        $evento = Evento::find($validated['evento_id']);
+        $evento = null;
+        $fecha = null;
 
-        if (! $evento || ! $evento->estaEnVenta()) {
-            return back()->withErrors(['mesa_ids' => 'Las reservaciones para ese evento no están abiertas en este momento.'])->withInput();
+        if (! empty($validated['evento_id'])) {
+            $evento = Evento::find($validated['evento_id']);
+
+            if (! $evento || ! $evento->estaEnVenta()) {
+                return back()->withErrors(['mesa_ids' => 'Las reservaciones para ese evento no están abiertas en este momento.'])->withInput();
+            }
+
+            $fecha = $evento->fecha;
+        } else {
+            if (empty($validated['fecha_general'])) {
+                return back()->withErrors(['mesa_ids' => 'Selecciona una fecha.'])->withInput();
+            }
+
+            $fecha = $validated['fecha_general'];
+
+            if (Evento::existeEnFecha($fecha)) {
+                return back()->withErrors(['mesa_ids' => 'Las reservas de ese día se hacen por medio del evento programado para esa fecha.'])->withInput();
+            }
+
+            if (! DiaOperacionGeneral::diaPermitido($fecha)) {
+                return back()->withErrors(['mesa_ids' => 'Esos días el club permanece cerrado. Días abiertos: '.DiaOperacionGeneral::nombresDiasActivos().'.'])->withInput();
+            }
         }
 
-        $validated['fecha'] = $evento->fecha;
-
         try {
-            $reserva = DB::transaction(function () use ($validated, $request, $evento) {
+            $reserva = DB::transaction(function () use ($validated, $request, $evento, $fecha) {
                 $mesas = Mesa::whereIn('id', $validated['mesa_ids'])
                     ->lockForUpdate()
                     ->get();
@@ -93,21 +134,18 @@ class ReservaController extends Controller
                     ]);
                 }
 
-                // Re-checar disponibilidad DENTRO de la transacción: como
-                // lockForUpdate() ya puso en fila estas mesas, si dos
-                // personas intentan reservar la misma mesa al mismo tiempo,
-                // la segunda espera a que la primera termine y aquí ve la
-                // reservación recién creada, evitando el doble apartado.
-                $mesasOcupadasIds = $evento->mesasOcupadasIds();
+                $mesasOcupadasIds = $evento ? $evento->mesasOcupadasIds() : Mesa::ocupadasEnFecha($fecha);
                 $mesaNoDisponible = $mesas->first(fn (Mesa $m) => in_array($m->id, $mesasOcupadasIds));
                 if ($mesaNoDisponible) {
                     throw ValidationException::withMessages([
-                        'mesa_ids' => 'La mesa '.$mesaNoDisponible->numero.' ya fue reservada por otra persona para este evento. Elige otra.',
+                        'mesa_ids' => 'La mesa '.$mesaNoDisponible->numero.' ya fue reservada por otra persona para esta fecha. Elige otra.',
                     ]);
                 }
 
-                $mapaPrecios = $evento->mapaPreciosMesa();
-                $total = $mesas->sum(fn (Mesa $m) => $evento->precioMesa($m, $mapaPrecios));
+                $mapaPrecios = $evento ? $evento->mapaPreciosMesa() : [];
+                $calcularPrecio = fn (Mesa $m) => $evento ? $evento->precioMesa($m, $mapaPrecios) : (float) $m->precio;
+
+                $total = $mesas->sum($calcularPrecio);
 
                 if ($validated['metodo_pago'] === 'tarjeta') {
                     (new ConektaPaymentService())->verificarPagado($validated['referencia_pago'], $total, 'MXN');
@@ -121,7 +159,7 @@ class ReservaController extends Controller
                     'user_id' => $request->user()->id,
                     'codigo_reserva' => $codigoReserva,
                     'nombre' => $validated['nombre'],
-                    'fecha' => $validated['fecha'],
+                    'fecha' => $fecha,
                     'mesa_id' => $mesas->pluck('numero')->implode(', '),
                     'zona' => $validated['zona'] ?? 'General',
                     'precio' => $total,
@@ -132,7 +170,7 @@ class ReservaController extends Controller
                 ]);
 
                 $pivotData = $mesas->mapWithKeys(fn (Mesa $mesa) => [
-                    $mesa->id => ['precio_al_momento' => $evento->precioMesa($mesa, $mapaPrecios)],
+                    $mesa->id => ['precio_al_momento' => $calcularPrecio($mesa)],
                 ])->toArray();
 
                 $reserva->mesas()->attach($pivotData);

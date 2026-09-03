@@ -11,6 +11,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Selección de Mesa - Victoria Luxury Club</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://pay.conekta.com/v1.0/js/conekta-checkout.min.js"></script>
   <script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.mode') === 'live' ? config('services.paypal.live.client_id') : config('services.paypal.sandbox.client_id') }}&currency=MXN"></script>
@@ -40,17 +41,44 @@
       </div>
     @endif
 
-    @if (! $eventoActivo)
-      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
-        No hay ningún evento próximo configurado todavía. Vuelve más tarde.
+    @php
+      $formHabilitado = $modoGeneral ? ($fechaGeneral && ! $bloqueoGeneral) : ($eventoActivo && $ventasActivas);
+    @endphp
+
+    @if ($modoGeneral)
+      <div class="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6">
+        <label class="block text-xs font-bold text-zinc-400 mb-2">ELIGE LA FECHA</label>
+        <form action="{{ route('reserva.mapa') }}" method="GET" class="flex gap-3">
+          <input type="date" name="fecha" value="{{ $fechaGeneral }}" required class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 [color-scheme:dark]">
+          <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 rounded-xl">Ver</button>
+        </form>
+        <p class="text-[10px] text-zinc-600 mt-2">Días de reserva general: {{ \App\Models\DiaOperacionGeneral::nombresDiasActivos() }}.</p>
       </div>
-    @elseif (! $ventasActivas)
-      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
-        Las reservaciones para <strong>{{ $eventoActivo->titulo }}</strong> ({{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM') }}) todavía no están abiertas. Vuelve más tarde.
-      </div>
+
+      @if ($bloqueoGeneral && $bloqueoGeneral['tipo'] === 'evento')
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          Las reservas de <strong>{{ \Carbon\Carbon::parse($fechaGeneral)->locale('es')->isoFormat('D [de] MMMM') }}</strong> se hacen por medio del evento
+          <strong>{{ $bloqueoGeneral['evento']->titulo }}</strong>.
+          <a href="{{ route('reserva.mapa', ['evento' => $bloqueoGeneral['evento']->id]) }}" class="underline text-amber-300">Ir a ese evento</a>
+        </div>
+      @elseif ($bloqueoGeneral && $bloqueoGeneral['tipo'] === 'cerrado')
+        <div class="bg-red-950/40 border border-red-500/40 text-red-300 text-sm rounded-xl p-4 text-center">
+          Esos días el club permanece cerrado. Días abiertos: {{ $bloqueoGeneral['dias'] }}.
+        </div>
+      @endif
+    @else
+      @if (! $eventoActivo)
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          No hay ningún evento próximo configurado todavía. Vuelve más tarde.
+        </div>
+      @elseif (! $ventasActivas)
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          Las reservaciones para <strong>{{ $eventoActivo->titulo }}</strong> ({{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM') }}) todavía no están abiertas. Vuelve más tarde.
+        </div>
+      @endif
     @endif
 
-    <form id="form-reserva" action="{{ route('reserva.procesar') }}" method="POST" class="space-y-8 {{ (! $eventoActivo || ! $ventasActivas) ? 'opacity-40 pointer-events-none select-none' : '' }}">
+    <form id="form-reserva" action="{{ route('reserva.procesar') }}" method="POST" class="space-y-8 {{ ! $formHabilitado ? 'opacity-40 pointer-events-none select-none' : '' }}">
       @csrf
 
       <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center font-semibold">
@@ -232,10 +260,10 @@
             <label class="block text-xs font-bold text-zinc-400 mb-2">FECHA</label>
             <input type="text"
                    id="input_fecha"
-                   value="{{ $eventoActivo ? \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM, YYYY') : '' }}"
+                   value="{{ $eventoActivo ? \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM, YYYY') : ($fechaGeneral ? \Carbon\Carbon::parse($fechaGeneral)->locale('es')->isoFormat('D [de] MMMM, YYYY') : '') }}"
                    disabled
                    class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-400 text-sm cursor-not-allowed">
-            <p class="text-[10px] text-zinc-600 mt-1">Fija: es la fecha del evento activo, no se puede cambiar.</p>
+            <p class="text-[10px] text-zinc-600 mt-1">{{ $modoGeneral ? 'Cambia la fecha arriba.' : 'Fija: es la fecha del evento activo, no se puede cambiar.' }}</p>
           </div>
           <div class="sm:col-span-2">
             <label class="block text-xs font-bold text-zinc-400 mb-2">PERSONAS</label>
@@ -282,6 +310,7 @@
         <input type="hidden" name="referencia_pago" id="input_referencia_pago">
         <input type="hidden" name="zona" id="input_zona">
         <input type="hidden" name="evento_id" value="{{ $eventoActivo->id ?? '' }}">
+        <input type="hidden" name="fecha_general" value="{{ $fechaGeneral ?? '' }}">
         <div id="mesa_ids_hidden"></div>
       </div>
 
@@ -292,6 +321,7 @@
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const CONEKTA_PUBLIC_KEY = "{{ config('services.conekta.public_key') }}";
     const EVENTO_ID = {{ $eventoActivo->id ?? 'null' }};
+    const FECHA_GENERAL = {{ $fechaGeneral ? "'".$fechaGeneral."'" : 'null' }};
     let paypalRendered = false;
 
     const mesasSeleccionadas = new Map();
@@ -447,7 +477,7 @@
             'X-CSRF-TOKEN': CSRF_TOKEN,
             'Accept': 'application/json',
           },
-          body: JSON.stringify({ mesa_ids: mesaIds, evento_id: EVENTO_ID }),
+          body: JSON.stringify({ mesa_ids: mesaIds, evento_id: EVENTO_ID, fecha_general: FECHA_GENERAL }),
         });
 
         const datos = await respuesta.json();
@@ -504,7 +534,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ mesa_ids: mesaIds, evento_id: EVENTO_ID }),
+            body: JSON.stringify({ mesa_ids: mesaIds, evento_id: EVENTO_ID, fecha_general: FECHA_GENERAL }),
           });
 
           const datos = await respuesta.json();
@@ -526,7 +556,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ orden_id: data.orderID, mesa_ids: mesaIds, evento_id: EVENTO_ID }),
+            body: JSON.stringify({ orden_id: data.orderID, mesa_ids: mesaIds, evento_id: EVENTO_ID, fecha_general: FECHA_GENERAL }),
           });
 
           const datos = await respuesta.json();

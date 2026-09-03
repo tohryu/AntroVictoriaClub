@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\BoletoCover;
+use App\Models\CoverConfiguracion;
+use App\Models\DiaOperacionGeneral;
 use App\Models\Evento;
 use App\Services\Payments\ConektaPaymentService;
 use App\Services\Payments\PaymentException;
@@ -30,43 +32,84 @@ class CoverController extends Controller
                 ->find($eventoId);
         }
 
-        if (! $eventoActivo) {
-            $eventoActivo = Evento::proximoEventoActivo();
+        if ($eventoActivo) {
+            $precioCover = (float) $eventoActivo->cover_precio;
+            $entradaLibre = (bool) $eventoActivo->cover_entrada_libre;
+            $ventasActivas = (bool) $eventoActivo->ventas_activas;
+            $modoGeneral = false;
+            $fechaGeneral = null;
+            $bloqueoGeneral = null;
+
+            return view('cover', compact('precioCover', 'entradaLibre', 'eventoActivo', 'ventasActivas', 'modoGeneral', 'fechaGeneral', 'bloqueoGeneral'));
         }
 
-        $precioCover = $eventoActivo ? (float) $eventoActivo->cover_precio : 0;
-        $entradaLibre = $eventoActivo ? (bool) $eventoActivo->cover_entrada_libre : false;
-        $ventasActivas = $eventoActivo && $eventoActivo->ventas_activas;
+        $modoGeneral = true;
+        $ventasActivas = false;
+        $bloqueoGeneral = null;
+        $fechaGeneral = $request->query('fecha');
+        $precioCover = (float) CoverConfiguracion::precioActual();
+        $entradaLibre = (bool) CoverConfiguracion::entradaLibreActiva();
 
-        return view('cover', compact('precioCover', 'entradaLibre', 'eventoActivo', 'ventasActivas'));
+        if ($fechaGeneral) {
+            $eventoEnFecha = Evento::existeEnFecha($fechaGeneral);
+
+            if ($eventoEnFecha) {
+                $bloqueoGeneral = [
+                    'tipo' => 'evento',
+                    'evento' => $eventoEnFecha,
+                ];
+            } elseif (! DiaOperacionGeneral::diaPermitido($fechaGeneral)) {
+                $bloqueoGeneral = [
+                    'tipo' => 'cerrado',
+                    'dias' => DiaOperacionGeneral::nombresDiasActivos(),
+                ];
+            }
+        }
+
+        return view('cover', compact('precioCover', 'entradaLibre', 'eventoActivo', 'ventasActivas', 'modoGeneral', 'fechaGeneral', 'bloqueoGeneral'));
     }
 
     public function procesar(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255',
-            'evento_id' => 'required|integer|exists:eventos,id',
+            'evento_id' => 'nullable|integer|exists:eventos,id',
+            'fecha_general' => 'nullable|date|after_or_equal:today',
             'cantidad' => 'required|integer|min:1|max:20',
             'metodo_pago' => 'required|string|in:tarjeta,paypal,entrada_libre',
             'referencia_pago' => 'required|string|max:255',
         ]);
 
-        // El evento, su fecha y su precio SIEMPRE se validan en el
-        // servidor — cada evento tiene su propio precio de cover,
-        // independiente de los demás.
-        $evento = Evento::find($validated['evento_id']);
+        $evento = null;
+        $fecha = null;
 
-        if (! $evento || ! $evento->estaEnVenta()) {
-            return back()->withErrors(['cantidad' => 'La venta de cover para ese evento no está abierta en este momento.'])->withInput();
+        if (! empty($validated['evento_id'])) {
+            $evento = Evento::find($validated['evento_id']);
+
+            if (! $evento || ! $evento->estaEnVenta()) {
+                return back()->withErrors(['cantidad' => 'La venta de cover para ese evento no está abierta en este momento.'])->withInput();
+            }
+
+            $fecha = $evento->fecha;
+        } else {
+            if (empty($validated['fecha_general'])) {
+                return back()->withErrors(['cantidad' => 'Selecciona una fecha.'])->withInput();
+            }
+
+            $fecha = $validated['fecha_general'];
+
+            if (Evento::existeEnFecha($fecha)) {
+                return back()->withErrors(['cantidad' => 'La compra de cover para ese día se hace por medio del evento programado para esa fecha.'])->withInput();
+            }
+
+            if (! DiaOperacionGeneral::diaPermitido($fecha)) {
+                return back()->withErrors(['cantidad' => 'Esos días el club permanece cerrado. Días abiertos: '.DiaOperacionGeneral::nombresDiasActivos().'.'])->withInput();
+            }
         }
 
-        $validated['fecha'] = $evento->fecha;
-
         try {
-            $boleto = DB::transaction(function () use ($validated, $request, $evento) {
-                // La Entrada Libre SIEMPRE se decide en el servidor (nunca se
-                // confía en lo que mande el navegador), igual que el precio.
-                $entradaLibre = (bool) $evento->cover_entrada_libre;
+            $boleto = DB::transaction(function () use ($validated, $request, $evento, $fecha) {
+                $entradaLibre = $evento ? (bool) $evento->cover_entrada_libre : CoverConfiguracion::entradaLibreActiva();
 
                 if ($entradaLibre) {
                     $precioUnitario = 0;
@@ -74,11 +117,11 @@ class CoverController extends Controller
                     $metodoPago = 'entrada_libre';
                     $referenciaPago = 'ENTRADA-LIBRE-'.strtoupper(Str::random(8));
                 } else {
-                    $precioUnitario = (float) $evento->cover_precio;
+                    $precioUnitario = $evento ? (float) $evento->cover_precio : CoverConfiguracion::precioActual();
 
                     if ($precioUnitario <= 0) {
                         throw ValidationException::withMessages([
-                            'cantidad' => 'El precio del cover todavía no ha sido configurado por el administrador para este evento.',
+                            'cantidad' => 'El precio del cover todavía no ha sido configurado por el administrador.',
                         ]);
                     }
 
@@ -99,7 +142,7 @@ class CoverController extends Controller
                     'user_id' => $request->user()->id,
                     'codigo_boleto' => $codigoBoleto,
                     'nombre' => $validated['nombre'],
-                    'fecha' => $validated['fecha'],
+                    'fecha' => $fecha,
                     'cantidad' => $validated['cantidad'],
                     'precio_unitario' => $precioUnitario,
                     'precio_total' => $total,

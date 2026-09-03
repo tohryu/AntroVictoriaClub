@@ -105,21 +105,12 @@
         </p>
         <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
           @auth
-            @if($eventoActivo && $eventoActivo->ventas_activas)
-              <a href="{{ route('reserva.mapa') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
-                Reservar Mesa
-              </a>
-              <a href="{{ route('cover.formulario') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
-                Comprar Cover
-              </a>
-            @else
-              <span class="w-full sm:w-auto bg-zinc-950/80 text-zinc-500 border border-zinc-800 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md flex items-center justify-center cursor-not-allowed select-none">
-                Reservar Mesa
-              </span>
-              <span class="w-full sm:w-auto bg-zinc-950/80 text-zinc-500 border border-zinc-800 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md flex items-center justify-center cursor-not-allowed select-none">
-                Comprar Cover
-              </span>
-            @endif
+            <a href="{{ route('reserva.mapa') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
+              Reservar Mesa
+            </a>
+            <a href="{{ route('cover.formulario') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center">
+              Comprar Cover
+            </a>
           @else
             <a href="{{ route('login.google') }}" class="w-full sm:w-auto bg-zinc-900/90 hover:bg-zinc-800 text-amber-400/90 hover:text-amber-300 border border-amber-500/30 font-bold text-sm px-6 py-3 rounded-xl backdrop-blur-md transition-all flex items-center justify-center gap-2">
               Inicia sesión para Reservar

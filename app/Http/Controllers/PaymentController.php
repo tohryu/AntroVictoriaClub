@@ -17,13 +17,35 @@ class PaymentController extends Controller
         $validado = $request->validate([
             'mesa_ids' => 'required|array|min:1',
             'mesa_ids.*' => 'integer|exists:mesas,id',
-            'evento_id' => 'required|integer|exists:eventos,id',
+            'evento_id' => 'nullable|integer|exists:eventos,id',
+            'fecha_general' => 'nullable|date|after_or_equal:today',
         ]);
 
-        $evento = \App\Models\Evento::findOrFail($validado['evento_id']);
+        $evento = null;
+        $fecha = null;
 
-        if (! $evento->estaEnVenta()) {
-            abort(422, 'Las ventas para este evento no están abiertas en este momento.');
+        if (! empty($validado['evento_id'])) {
+            $evento = \App\Models\Evento::findOrFail($validado['evento_id']);
+
+            if (! $evento->estaEnVenta()) {
+                abort(422, 'Las ventas para este evento no están abiertas en este momento.');
+            }
+
+            $fecha = $evento->fecha;
+        } else {
+            if (empty($validado['fecha_general'])) {
+                abort(422, 'Selecciona una fecha.');
+            }
+
+            $fecha = $validado['fecha_general'];
+
+            if (\App\Models\Evento::existeEnFecha($fecha)) {
+                abort(422, 'Las reservas de ese día se hacen por medio del evento programado para esa fecha.');
+            }
+
+            if (! \App\Models\DiaOperacionGeneral::diaPermitido($fecha)) {
+                abort(422, 'Esos días el club permanece cerrado.');
+            }
         }
 
         $mesas = Mesa::whereIn('id', $validado['mesa_ids'])->get();
@@ -32,37 +54,70 @@ class PaymentController extends Controller
             abort(422, 'Una de las mesas seleccionadas ya no existe.');
         }
 
-        $mesasOcupadasIds = $evento->mesasOcupadasIds();
+        $mesasOcupadasIds = $evento ? $evento->mesasOcupadasIds() : Mesa::ocupadasEnFecha($fecha);
         if ($mesas->contains(fn (Mesa $m) => in_array($m->id, $mesasOcupadasIds))) {
-            abort(422, 'Una o más mesas seleccionadas ya no están disponibles para este evento.');
+            abort(422, 'Una o más mesas seleccionadas ya no están disponibles.');
         }
 
-        $mapaPrecios = $evento->mapaPreciosMesa();
+        if ($evento) {
+            $mapaPrecios = $evento->mapaPreciosMesa();
 
-        return $mesas->sum(fn (Mesa $m) => $evento->precioMesa($m, $mapaPrecios));
+            return $mesas->sum(fn (Mesa $m) => $evento->precioMesa($m, $mapaPrecios));
+        }
+
+        return (float) $mesas->sum('precio');
     }
 
     public function calcularTotalCover(Request $request): float
     {
         $validado = $request->validate([
             'cantidad' => 'required|integer|min:1|max:20',
-            'evento_id' => 'required|integer|exists:eventos,id',
+            'evento_id' => 'nullable|integer|exists:eventos,id',
+            'fecha_general' => 'nullable|date|after_or_equal:today',
         ]);
 
-        $evento = \App\Models\Evento::findOrFail($validado['evento_id']);
+        if (! empty($validado['evento_id'])) {
+            $evento = \App\Models\Evento::findOrFail($validado['evento_id']);
 
-        if (! $evento->estaEnVenta()) {
-            abort(422, 'Las ventas para este evento no están abiertas en este momento.');
+            if (! $evento->estaEnVenta()) {
+                abort(422, 'Las ventas para este evento no están abiertas en este momento.');
+            }
+
+            if ($evento->cover_entrada_libre) {
+                abort(422, 'El cover de este evento es Entrada Libre, no se puede pagar.');
+            }
+
+            $precio = (float) $evento->cover_precio;
+
+            if ($precio <= 0) {
+                abort(422, 'El precio del cover todavía no ha sido configurado por el administrador para este evento.');
+            }
+
+            return round($precio * $validado['cantidad'], 2);
         }
 
-        if ($evento->cover_entrada_libre) {
-            abort(422, 'El cover de este evento es Entrada Libre, no se puede pagar.');
+        if (empty($validado['fecha_general'])) {
+            abort(422, 'Selecciona una fecha.');
         }
 
-        $precio = (float) $evento->cover_precio;
+        $fecha = $validado['fecha_general'];
+
+        if (\App\Models\Evento::existeEnFecha($fecha)) {
+            abort(422, 'La compra de cover para ese día se hace por medio del evento programado para esa fecha.');
+        }
+
+        if (! \App\Models\DiaOperacionGeneral::diaPermitido($fecha)) {
+            abort(422, 'Esos días el club permanece cerrado.');
+        }
+
+        if (\App\Models\CoverConfiguracion::entradaLibreActiva()) {
+            abort(422, 'El cover general es Entrada Libre, no se puede pagar.');
+        }
+
+        $precio = \App\Models\CoverConfiguracion::precioActual();
 
         if ($precio <= 0) {
-            abort(422, 'El precio del cover todavía no ha sido configurado por el administrador para este evento.');
+            abort(422, 'El precio del cover general todavía no ha sido configurado por el administrador.');
         }
 
         return round($precio * $validado['cantidad'], 2);

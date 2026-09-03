@@ -16,45 +16,61 @@ class MesaAdminController extends Controller
         $mesas = Mesa::all();
         $eventosDisponibles = Evento::futurosActivos();
 
-        $eventoId = $request->query('evento');
-        $eventoSeleccionado = $eventoId ? $eventosDisponibles->firstWhere('id', (int) $eventoId) : null;
+        $eventoParam = $request->query('evento', 'general');
+        $modoGeneral = $eventoParam === 'general';
+        $eventoSeleccionado = null;
 
-        if (! $eventoSeleccionado) {
-            $eventoSeleccionado = $eventosDisponibles->first();
+        if (! $modoGeneral) {
+            $eventoSeleccionado = $eventosDisponibles->firstWhere('id', (int) $eventoParam);
+
+            if (! $eventoSeleccionado) {
+                $modoGeneral = true;
+            }
         }
 
         $mapaPrecios = $eventoSeleccionado ? $eventoSeleccionado->mapaPreciosMesa() : [];
         $mesasOcupadasIds = $eventoSeleccionado ? $eventoSeleccionado->mesasOcupadasIds() : [];
 
-        // Se mantiene "eventoActivo" por compatibilidad con el resto de la
-        // vista (candado de ventas, etc.) — ahora apunta al evento que el
-        // admin está viendo/editando en este momento, no siempre "el
-        // próximo évento" fijo.
         $eventoActivo = $eventoSeleccionado;
 
-        return view('admin.mesas.index', compact('mesas', 'eventoActivo', 'eventoSeleccionado', 'eventosDisponibles', 'mapaPrecios', 'mesasOcupadasIds'));
+        $diasOperacion = \App\Models\DiaOperacionGeneral::orderBy('dia_semana')->get();
+        $precioCoverGeneral = \App\Models\CoverConfiguracion::precioActual();
+        $entradaLibreGeneral = \App\Models\CoverConfiguracion::entradaLibreActiva();
+
+        return view('admin.mesas.index', compact('mesas', 'eventoActivo', 'eventoSeleccionado', 'eventosDisponibles', 'mapaPrecios', 'mesasOcupadasIds', 'modoGeneral', 'diasOperacion', 'precioCoverGeneral', 'entradaLibreGeneral'));
     }
 
     public function updatePrecio(Request $request, $id)
     {
         $validado = $request->validate([
             'precio' => 'required|numeric|min:0|max:999999.99',
-            'evento_id' => 'required|integer|exists:eventos,id',
+            'evento_id' => 'required|string',
         ]);
 
+        $esGeneral = $validado['evento_id'] === 'general';
+
+        if (! $esGeneral) {
+            $request->validate(['evento_id' => 'integer|exists:eventos,id']);
+        }
+
         try {
-            $mesa = DB::transaction(function () use ($validado, $id) {
+            $mesa = DB::transaction(function () use ($validado, $id, $esGeneral) {
                 $mesa = Mesa::lockForUpdate()->findOrFail($id);
 
-                \App\Models\EventoMesaPrecio::updateOrCreate(
-                    ['evento_id' => $validado['evento_id'], 'mesa_id' => $mesa->id],
-                    ['precio' => $validado['precio']]
-                );
+                if ($esGeneral) {
+                    $mesa->precio = $validado['precio'];
+                    $mesa->save();
+                } else {
+                    \App\Models\EventoMesaPrecio::updateOrCreate(
+                        ['evento_id' => (int) $validado['evento_id'], 'mesa_id' => $mesa->id],
+                        ['precio' => $validado['precio']]
+                    );
+                }
 
                 return $mesa;
             });
         } catch (\Throwable $e) {
-            Log::error('Error actualizando precio de mesa '.$id.' para el evento: '.$e->getMessage(), [
+            Log::error('Error actualizando precio de mesa '.$id.': '.$e->getMessage(), [
                 'exception' => $e,
             ]);
 
@@ -69,7 +85,7 @@ class MesaAdminController extends Controller
             return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
         }
 
-        $mensaje = "¡Precio de {$mesa->numero} actualizado a $".number_format((float) $validado['precio'], 2).' para este evento!';
+        $mensaje = "¡Precio de {$mesa->numero} actualizado a $".number_format((float) $validado['precio'], 2).($esGeneral ? '!' : ' para este evento!');
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -220,5 +236,24 @@ class MesaAdminController extends Controller
         }
 
         return redirect()->route('admin.mesas.index')->with('success', $mensaje);
+    }
+
+    public function actualizarDiasOperacion(Request $request)
+    {
+        $validado = $request->validate([
+            'dias' => 'array',
+            'dias.*' => 'integer|min:0|max:6',
+        ]);
+
+        $diasActivos = $validado['dias'] ?? [];
+
+        DB::transaction(function () use ($diasActivos) {
+            foreach (range(0, 6) as $dia) {
+                \App\Models\DiaOperacionGeneral::where('dia_semana', $dia)
+                    ->update(['activo' => in_array($dia, $diasActivos)]);
+            }
+        });
+
+        return redirect()->route('admin.mesas.index')->with('success', 'Días de operación general actualizados.');
     }
 }

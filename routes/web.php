@@ -67,6 +67,7 @@ Route::prefix('admin/mesas')->name('admin.mesas.')->middleware(['auth', 'admin']
     Route::patch('/{id}/precio', [MesaAdminController::class, 'updatePrecio'])->name('update_precio');
     Route::patch('/{id}/disponibilidad', [MesaAdminController::class, 'toggleDisponibilidad'])->name('toggle_disponible');
     Route::patch('/evento/{id}/ventas', [MesaAdminController::class, 'toggleVentasEvento'])->name('evento.toggle_ventas');
+    Route::patch('/dias-operacion', [MesaAdminController::class, 'actualizarDiasOperacion'])->name('dias_operacion');
 });
 
 Route::prefix('admin/escaner')->name('admin.escaner.')->middleware(['auth', 'admin'])->group(function () {

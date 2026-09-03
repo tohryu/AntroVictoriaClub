@@ -6,6 +6,7 @@
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>Boleto de Cover - Victoria Luxury Club</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://pay.conekta.com/v1.0/js/conekta-checkout.min.js"></script>
   <script src="https://www.paypal.com/sdk/js?client-id={{ config('services.paypal.mode') === 'live' ? config('services.paypal.live.client_id') : config('services.paypal.sandbox.client_id') }}&currency=MXN"></script>
@@ -30,20 +31,51 @@
       @endif
     </div>
 
-    @if ($precioCover <= 0 && ! $entradaLibre)
-      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
-        La venta de cover todavía no está disponible. El administrador aún no ha configurado el precio.
-      </div>
-    @endif
+    @php
+      $coverFormHabilitado = $modoGeneral ? ($fechaGeneral && ! $bloqueoGeneral && ($entradaLibre || $precioCover > 0)) : ($eventoActivo && $ventasActivas && ($entradaLibre || $precioCover > 0));
+    @endphp
 
-    @if (! $eventoActivo)
-      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
-        No hay ningún evento próximo configurado todavía. Vuelve más tarde.
+    @if ($modoGeneral)
+      <div class="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6">
+        <label class="block text-xs font-bold text-zinc-400 mb-2">ELIGE LA FECHA</label>
+        <form action="{{ route('cover.formulario') }}" method="GET" class="flex gap-3">
+          <input type="date" name="fecha" value="{{ $fechaGeneral }}" required class="flex-1 bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500 [color-scheme:dark]">
+          <button type="submit" class="bg-amber-500 hover:bg-amber-400 text-black font-bold px-6 rounded-xl">Ver</button>
+        </form>
+        <p class="text-[10px] text-zinc-600 mt-2">Días de cover general: {{ \App\Models\DiaOperacionGeneral::nombresDiasActivos() }}.</p>
       </div>
-    @elseif (! $ventasActivas)
-      <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
-        La venta de cover para <strong>{{ $eventoActivo->titulo }}</strong> ({{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM, YYYY') }}) todavía no está abierta. Vuelve más tarde.
-      </div>
+
+      @if ($bloqueoGeneral && $bloqueoGeneral['tipo'] === 'evento')
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          La compra de cover de <strong>{{ \Carbon\Carbon::parse($fechaGeneral)->locale('es')->isoFormat('D [de] MMMM') }}</strong> se hace por medio del evento
+          <strong>{{ $bloqueoGeneral['evento']->titulo }}</strong>.
+          <a href="{{ route('cover.formulario', ['evento' => $bloqueoGeneral['evento']->id]) }}" class="underline text-amber-300">Ir a ese evento</a>
+        </div>
+      @elseif ($bloqueoGeneral && $bloqueoGeneral['tipo'] === 'cerrado')
+        <div class="bg-red-950/40 border border-red-500/40 text-red-300 text-sm rounded-xl p-4 text-center">
+          Esos días el club permanece cerrado. Días abiertos: {{ $bloqueoGeneral['dias'] }}.
+        </div>
+      @elseif ($fechaGeneral && $precioCover <= 0 && ! $entradaLibre)
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          La venta de cover general todavía no está disponible. El administrador aún no ha configurado el precio.
+        </div>
+      @endif
+    @else
+      @if ($precioCover <= 0 && ! $entradaLibre)
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          La venta de cover todavía no está disponible. El administrador aún no ha configurado el precio.
+        </div>
+      @endif
+
+      @if (! $eventoActivo)
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          No hay ningún evento próximo configurado todavía. Vuelve más tarde.
+        </div>
+      @elseif (! $ventasActivas)
+        <div class="bg-amber-500/10 border border-amber-500/40 text-amber-300 text-sm rounded-xl p-4 text-center">
+          La venta de cover para <strong>{{ $eventoActivo->titulo }}</strong> ({{ \Carbon\Carbon::parse($eventoActivo->fecha)->locale('es')->isoFormat('D [de] MMMM, YYYY') }}) todavía no está abierta. Vuelve más tarde.
+        </div>
+      @endif
     @endif
 
     @if ($errors->any())
@@ -56,7 +88,7 @@
       </div>
     @endif
 
-    <form id="form-cover" action="{{ route('cover.procesar') }}" method="POST" class="space-y-6 {{ (($precioCover <= 0 && ! $entradaLibre) || ! $eventoActivo || ! $ventasActivas) ? 'opacity-40 pointer-events-none' : '' }}">
+    <form id="form-cover" action="{{ route('cover.procesar') }}" method="POST" class="space-y-6 {{ ! $coverFormHabilitado ? 'opacity-40 pointer-events-none' : '' }}">
       @csrf
 
       <div class="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-6 space-y-6">
@@ -68,11 +100,12 @@
         <div>
           <label class="block text-xs font-bold text-zinc-400 mb-2">FECHA</label>
           <input type="date"
-                 name="fecha"
-                 value="{{ $eventoActivo ? $eventoActivo->fecha : '' }}"
+                 id="input_fecha_cover"
+                 name="fecha_display"
+                 value="{{ $eventoActivo ? $eventoActivo->fecha : ($fechaGeneral ?? '') }}"
                  disabled
                  class="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-zinc-400 text-sm cursor-not-allowed [color-scheme:dark]">
-          <p class="text-[10px] text-zinc-600 mt-1">Fija: es la fecha del evento activo, no se puede cambiar.</p>
+          <p class="text-[10px] text-zinc-600 mt-1">{{ $modoGeneral ? 'Cambia la fecha arriba.' : 'Fija: es la fecha del evento activo, no se puede cambiar.' }}</p>
         </div>
 
         <!-- Un boleto de cover = una persona (el nombre de arriba). -->
@@ -127,6 +160,7 @@
         <input type="hidden" name="metodo_pago" id="input_metodo_pago_cover" value="{{ $entradaLibre ? 'entrada_libre' : 'tarjeta' }}">
         <input type="hidden" name="referencia_pago" id="input_referencia_pago_cover">
         <input type="hidden" name="evento_id" value="{{ $eventoActivo->id ?? '' }}">
+        <input type="hidden" name="fecha_general" value="{{ $fechaGeneral ?? '' }}">
       </div>
     </form>
   </div>
@@ -136,6 +170,7 @@
     const PRECIO_COVER = {{ (float) $precioCover }};
     const CONEKTA_PUBLIC_KEY = "{{ config('services.conekta.public_key') }}";
     const EVENTO_ID = {{ $eventoActivo->id ?? 'null' }};
+    const FECHA_GENERAL = {{ $fechaGeneral ? "'".$fechaGeneral."'" : 'null' }};
     let paypalRenderedCover = false;
 
     function obtenerCantidad() {
@@ -193,7 +228,7 @@
             'X-CSRF-TOKEN': CSRF_TOKEN,
             'Accept': 'application/json',
           },
-          body: JSON.stringify({ cantidad: obtenerCantidad(), evento_id: EVENTO_ID }),
+          body: JSON.stringify({ cantidad: obtenerCantidad(), evento_id: EVENTO_ID, fecha_general: FECHA_GENERAL }),
         });
 
         const datos = await respuesta.json();
@@ -248,7 +283,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ cantidad: obtenerCantidad(), evento_id: EVENTO_ID }),
+            body: JSON.stringify({ cantidad: obtenerCantidad(), evento_id: EVENTO_ID, fecha_general: FECHA_GENERAL }),
           });
 
           const datos = await respuesta.json();
@@ -268,7 +303,7 @@
               'X-CSRF-TOKEN': CSRF_TOKEN,
               'Accept': 'application/json',
             },
-            body: JSON.stringify({ orden_id: data.orderID, cantidad: obtenerCantidad(), evento_id: EVENTO_ID }),
+            body: JSON.stringify({ orden_id: data.orderID, cantidad: obtenerCantidad(), evento_id: EVENTO_ID, fecha_general: FECHA_GENERAL }),
           });
 
           const datos = await respuesta.json();
@@ -290,7 +325,7 @@
 
     function confirmarCoverEntradaLibre() {
       const nombre = document.querySelector('input[name="nombre"]').value.trim();
-      const fecha = document.querySelector('input[name="fecha"]').value;
+      const fecha = document.getElementById('input_fecha_cover').value;
 
       if (!nombre || !fecha) {
         alert('Completa tu nombre y fecha antes de continuar.');

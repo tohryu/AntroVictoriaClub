@@ -68,6 +68,13 @@ class Evento extends Model
             ->get();
     }
 
+    public static function existeEnFecha($fecha): ?self
+    {
+        return static::where('activo', true)
+            ->where('fecha', $fecha)
+            ->first();
+    }
+
     /**
      * Un evento se puede comprar/reservar cuando: sigue activo, su fecha
      * no ha pasado, y el admin prendió el candado de ventas para ESE
@@ -126,17 +133,6 @@ class Evento extends Model
      */
     public function mesasOcupadasIds(): array
     {
-        $bloqueadas = MesaBloqueoEvento::where('evento_id', $this->id)
-            ->pluck('mesa_id')
-            ->toArray();
-
-        $reservadas = \Illuminate\Support\Facades\DB::table('mesa_reserva')
-            ->join('reservas', 'reservas.id', '=', 'mesa_reserva.reserva_id')
-            ->where('reservas.fecha', $this->fecha)
-            ->where('reservas.estado', '!=', 'cancelada')
-            ->pluck('mesa_reserva.mesa_id')
-            ->toArray();
-
-        return array_values(array_unique(array_merge($bloqueadas, $reservadas)));
+        return Mesa::ocupadasEnFecha($this->fecha, $this->id);
     }
 }

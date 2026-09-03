@@ -52,4 +52,23 @@ class Mesa extends Model
             ->where('reservas.estado', '!=', 'cancelada')
             ->exists();
     }
+
+    public static function ocupadasEnFecha($fecha, ?int $eventoId = null): array
+    {
+        $reservadas = \Illuminate\Support\Facades\DB::table('mesa_reserva')
+            ->join('reservas', 'reservas.id', '=', 'mesa_reserva.reserva_id')
+            ->where('reservas.fecha', $fecha)
+            ->where('reservas.estado', '!=', 'cancelada')
+            ->pluck('mesa_reserva.mesa_id')
+            ->toArray();
+
+        $bloqueadas = [];
+        if ($eventoId) {
+            $bloqueadas = MesaBloqueoEvento::where('evento_id', $eventoId)
+                ->pluck('mesa_id')
+                ->toArray();
+        }
+
+        return array_values(array_unique(array_merge($reservadas, $bloqueadas)));
+    }
 }

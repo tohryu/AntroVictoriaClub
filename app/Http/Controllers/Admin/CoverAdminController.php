@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\CoverConfiguracion;
 use App\Models\Evento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,21 +15,32 @@ class CoverAdminController extends Controller
     {
         $validado = $request->validate([
             'precio' => 'required|numeric|min:0|max:999999.99',
-            'evento_id' => 'required|integer|exists:eventos,id',
+            'evento_id' => 'required|string',
         ]);
 
+        $esGeneral = $validado['evento_id'] === 'general';
+
+        if (! $esGeneral) {
+            $request->validate(['evento_id' => 'integer|exists:eventos,id']);
+        }
+
         try {
-            $evento = DB::transaction(function () use ($validado) {
+            $resultado = DB::transaction(function () use ($validado, $esGeneral) {
+                if ($esGeneral) {
+                    CoverConfiguracion::actualizarPrecio($validado['precio']);
+
+                    return ['titulo' => null, 'precio' => $validado['precio']];
+                }
+
                 $evento = Evento::lockForUpdate()->findOrFail($validado['evento_id']);
                 $evento->cover_precio = $validado['precio'];
-                // Guardar un precio específico siempre desactiva Entrada Libre.
                 $evento->cover_entrada_libre = false;
                 $evento->save();
 
-                return $evento->fresh();
+                return ['titulo' => $evento->titulo, 'precio' => (float) $evento->cover_precio];
             });
         } catch (\Throwable $e) {
-            Log::error('Error actualizando precio de cover del evento: '.$e->getMessage(), [
+            Log::error('Error actualizando precio de cover: '.$e->getMessage(), [
                 'exception' => $e,
             ]);
 
@@ -43,13 +55,15 @@ class CoverAdminController extends Controller
             return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
         }
 
-        $mensaje = '¡Precio de cover de "'.$evento->titulo.'" actualizado a $'.number_format((float) $evento->cover_precio, 2).'!';
+        $mensaje = $resultado['titulo']
+            ? '¡Precio de cover de "'.$resultado['titulo'].'" actualizado a $'.number_format($resultado['precio'], 2).'!'
+            : '¡Precio de cover general actualizado a $'.number_format($resultado['precio'], 2).'!';
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => $mensaje,
-                'precio' => (float) $evento->cover_precio,
+                'precio' => $resultado['precio'],
             ]);
         }
 
@@ -59,19 +73,31 @@ class CoverAdminController extends Controller
     public function activarEntradaLibre(Request $request)
     {
         $validado = $request->validate([
-            'evento_id' => 'required|integer|exists:eventos,id',
+            'evento_id' => 'required|string',
         ]);
 
+        $esGeneral = $validado['evento_id'] === 'general';
+
+        if (! $esGeneral) {
+            $request->validate(['evento_id' => 'integer|exists:eventos,id']);
+        }
+
         try {
-            $evento = DB::transaction(function () use ($validado) {
+            $resultado = DB::transaction(function () use ($validado, $esGeneral) {
+                if ($esGeneral) {
+                    CoverConfiguracion::activarEntradaLibre();
+
+                    return null;
+                }
+
                 $evento = Evento::lockForUpdate()->findOrFail($validado['evento_id']);
                 $evento->cover_entrada_libre = true;
                 $evento->save();
 
-                return $evento->fresh();
+                return $evento->titulo;
             });
         } catch (\Throwable $e) {
-            Log::error('Error activando Entrada Libre para el evento: '.$e->getMessage(), [
+            Log::error('Error activando Entrada Libre: '.$e->getMessage(), [
                 'exception' => $e,
             ]);
 
@@ -86,13 +112,14 @@ class CoverAdminController extends Controller
             return redirect()->route('admin.mesas.index')->with('error', $mensajeError);
         }
 
-        $mensaje = '¡Cover de "'.$evento->titulo.'" puesto en Entrada Libre! Ya no se cobrará para este evento.';
+        $mensaje = $resultado
+            ? '¡Cover de "'.$resultado.'" puesto en Entrada Libre!'
+            : '¡Cover general puesto en Entrada Libre!';
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => $mensaje,
-                'entrada_libre' => (bool) $evento->cover_entrada_libre,
             ]);
         }
 
