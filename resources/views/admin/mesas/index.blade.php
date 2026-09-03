@@ -452,7 +452,7 @@
 
     <script>
 
-        const EVENTO_SELECCIONADO_ID = {{ $modoGeneral ? "'general'" : ($eventoSeleccionado->id ?? 'null') }};
+        const EVENTO_SELECCIONADO_ID = {{ $modoGeneral ? "'general'" : ($eventoSeleccionado ? "'".$eventoSeleccionado->id."'" : 'null') }};
 
         const mesasPreciosEvento = {
             @foreach($mapaPrecios as $mesaId => $precio)

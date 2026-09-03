@@ -15,7 +15,7 @@ class CoverAdminController extends Controller
     {
         $validado = $request->validate([
             'precio' => 'required|numeric|min:0|max:999999.99',
-            'evento_id' => 'required|string',
+            'evento_id' => 'required',
         ]);
 
         $esGeneral = $validado['evento_id'] === 'general';
@@ -73,7 +73,7 @@ class CoverAdminController extends Controller
     public function activarEntradaLibre(Request $request)
     {
         $validado = $request->validate([
-            'evento_id' => 'required|string',
+            'evento_id' => 'required',
         ]);
 
         $esGeneral = $validado['evento_id'] === 'general';
